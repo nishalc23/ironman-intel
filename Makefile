@@ -1,20 +1,31 @@
-.PHONY: up down sync logs db-shell build
+.PHONY: up down api sync logs db-shell build frontend install
 
 up:
 	docker compose up -d postgres redis
-	@echo "Postgres running on :5432 — Redis on :6379"
+	@echo "Postgres :5432 · Redis :6379"
+
+api:
+	docker compose up -d api
+	@echo "API running at http://localhost:8000"
+	@echo "Docs at     http://localhost:8000/docs"
 
 down:
 	docker compose down
 
 build:
-	docker compose build ingestion
+	docker compose build api ingestion
 
 sync:
-	docker compose run --rm ingestion
+	docker compose --profile sync run --rm ingestion
 
 logs:
-	docker compose logs -f
+	docker compose logs -f api
 
 db-shell:
 	docker compose exec postgres psql -U ironman -d ironman
+
+install:
+	cd frontend && npm install
+
+frontend:
+	cd frontend && npm run dev

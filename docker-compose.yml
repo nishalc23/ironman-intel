@@ -25,6 +25,27 @@ services:
       timeout: 3s
       retries: 5
 
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://ironman:${POSTGRES_PASSWORD}@postgres:5432/ironman
+      REDIS_URL: redis://redis:6379/0
+      GARMIN_EMAIL: ${GARMIN_EMAIL}
+      GARMIN_PASSWORD: ${GARMIN_PASSWORD}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    volumes:
+      - .:/app
+      - garmin_tokens:/app/.garmin_tokens
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   ingestion:
     build:
       context: .
@@ -40,8 +61,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+    profiles:
+      - sync
 
 volumes:
   postgres_data:

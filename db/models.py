@@ -1,6 +1,6 @@
 from datetime import datetime, date
 from sqlalchemy import (
-    Column, Integer, String, Float, DateTime, Date, Boolean,
+    Column, Integer, String, Float, DateTime, Date, Boolean, JSON,
     ForeignKey, UniqueConstraint, Index,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
@@ -25,6 +25,7 @@ class Athlete(Base):
     activities = relationship("Activity", back_populates="athlete", cascade="all, delete-orphan")
     daily_metrics = relationship("DailyMetrics", back_populates="athlete", cascade="all, delete-orphan")
     predictions = relationship("Prediction", back_populates="athlete", cascade="all, delete-orphan")
+    gym_workouts = relationship("GymWorkout", back_populates="athlete", cascade="all, delete-orphan")
 
 
 class Activity(Base):
@@ -119,3 +120,29 @@ class Prediction(Base):
     model_version = Column(String, nullable=True)
 
     athlete = relationship("Athlete", back_populates="predictions")
+
+
+class GymWorkout(Base):
+    """
+    A single gym session. exercises is a JSON array so you can log any number
+    of movements without needing a separate table per exercise.
+
+    Example exercises value:
+    [{"name": "Squat", "sets": [{"reps": 5, "weight_kg": 100}, ...]}, ...]
+    """
+
+    __tablename__ = "gym_workouts"
+
+    id = Column(Integer, primary_key=True)
+    athlete_id = Column(Integer, ForeignKey("athletes.id"), nullable=False)
+    date = Column(Date, nullable=False)
+    notes = Column(String, nullable=True)
+    duration_minutes = Column(Integer, nullable=True)
+    exercises = Column(JSON, nullable=False, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    athlete = relationship("Athlete", back_populates="gym_workouts")
+
+    __table_args__ = (
+        Index("idx_gym_workouts_athlete_date", "athlete_id", "date"),
+    )
