@@ -13,11 +13,11 @@ class PlanOut(BaseModel):
 
 
 @router.get("/today", response_model=PlanOut)
-def get_today_plan():
+def get_today_plan(gym: bool = True):
     with get_db() as db:
         athlete = db.query(Athlete).first()
         if not athlete:
             raise HTTPException(404, "No athlete found — run the sync first")
 
-        plan_text = generate_plan(db, athlete)
+        plan_text = generate_plan(db, athlete, gym=gym)
         return PlanOut(plan=plan_text)

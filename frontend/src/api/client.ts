@@ -68,8 +68,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 export const api = {
   getMetrics: (days = 90) => get<MetricsSummary>(`/metrics/?days=${days}`),
   getActivities: (limit = 30) => get<ActivityRecord[]>(`/activities/?limit=${limit}`),
-  getTodayPlan: () => get<{ plan: string }>("/plan/today"),
+  getTodayPlan: (gym = true) => get<{ plan: string }>(`/plan/today?gym=${gym}`),
   getGymWorkouts: () => get<GymWorkout[]>("/gym/"),
+  getExerciseNames: () => get<string[]>("/gym/exercises"),
   logGymWorkout: (payload: unknown) => post<GymWorkout>("/gym/", payload),
   triggerSync: () => post<{ status: string }>("/sync/", {}),
 };

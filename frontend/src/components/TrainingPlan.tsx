@@ -22,14 +22,16 @@ export default function TrainingPlan({ riskLevel }: Props) {
   const [plan, setPlan] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gymToday, setGymToday] = useState(true);
 
   async function fetchPlan() {
     setLoading(true);
     setError(null);
+    setPlan(null);
     try {
-      const data = await api.getTodayPlan();
+      const data = await api.getTodayPlan(gymToday);
       setPlan(data.plan);
-    } catch (e) {
+    } catch {
       setError("Could not generate plan — make sure the API is running and ANTHROPIC_API_KEY is set.");
     } finally {
       setLoading(false);
@@ -52,6 +54,15 @@ export default function TrainingPlan({ riskLevel }: Props) {
           <p className="text-ironman-muted text-sm text-center max-w-xs">
             Claude will read your Garmin data and fatigue score, then write a personalized plan for today.
           </p>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <div
+              onClick={() => setGymToday(g => !g)}
+              className={`w-9 h-5 rounded-full transition-colors relative ${gymToday ? "bg-ironman-red" : "bg-ironman-border"}`}
+            >
+              <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${gymToday ? "translate-x-4" : "translate-x-0.5"}`} />
+            </div>
+            <span className="text-xs text-ironman-muted">Gym today</span>
+          </label>
           <button
             onClick={fetchPlan}
             className="bg-ironman-red hover:bg-red-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-colors"
@@ -84,12 +95,23 @@ export default function TrainingPlan({ riskLevel }: Props) {
             [&_li::marker]:text-ironman-red">
             <ReactMarkdown>{plan}</ReactMarkdown>
           </div>
-          <button
-            onClick={fetchPlan}
-            className="mt-4 text-xs text-ironman-muted hover:text-white transition-colors underline underline-offset-2"
-          >
-            Regenerate
-          </button>
+          <div className="mt-4 flex items-center gap-4">
+            <button
+              onClick={fetchPlan}
+              className="text-xs text-ironman-muted hover:text-white transition-colors underline underline-offset-2"
+            >
+              Regenerate
+            </button>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <div
+                onClick={() => setGymToday(g => !g)}
+                className={`w-9 h-5 rounded-full transition-colors relative ${gymToday ? "bg-ironman-red" : "bg-ironman-border"}`}
+              >
+                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${gymToday ? "translate-x-4" : "translate-x-0.5"}`} />
+              </div>
+              <span className="text-xs text-ironman-muted">Gym today</span>
+            </label>
+          </div>
         </div>
       )}
     </div>

@@ -1,15 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "../api/client";
 import type { GymWorkout } from "../api/client";
 
 interface SetRow { reps: string; weight: string; }
 interface ExRow  { name: string; sets: SetRow[]; }
-
-const SUGGESTED: string[] = [
-  "Squat", "Deadlift", "Bench Press", "Pull-Up",
-  "Overhead Press", "Romanian Deadlift", "Hip Thrust",
-  "Cable Row", "Lat Pulldown", "Core / Plank",
-];
 
 function emptyEx(): ExRow {
   return { name: "", sets: [{ reps: "", weight: "" }] };
@@ -27,6 +21,11 @@ export default function GymLog({ recentWorkouts, onSaved }: Props) {
   const [exercises, setExercises] = useState<ExRow[]>([emptyEx()]);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [exerciseNames, setExerciseNames] = useState<string[]>([]);
+
+  useEffect(() => {
+    api.getExerciseNames().then(setExerciseNames).catch(() => {});
+  }, []);
 
   function updateExName(i: number, val: string) {
     setExercises((ex) => ex.map((e, idx) => idx === i ? { ...e, name: val } : e));
@@ -132,7 +131,7 @@ export default function GymLog({ recentWorkouts, onSaved }: Props) {
                 className="w-full bg-transparent border-b border-[#2A2A2A] pb-2 text-sm focus:outline-none focus:border-ironman-red"
               />
               <datalist id="exercises-list">
-                {SUGGESTED.map((s) => <option key={s} value={s} />)}
+                {exerciseNames.map((s) => <option key={s} value={s} />)}
               </datalist>
               <div className="space-y-1">
                 {ex.sets.map((s, si) => (

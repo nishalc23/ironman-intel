@@ -26,8 +26,12 @@ LBS_TO_KG = 0.453592
 
 
 def parse_hevy_time(s: str) -> datetime:
-    # Format: "May 18, 2026, 6:06 PM"
-    return datetime.strptime(s.strip(), "%B %d, %Y, %I:%M %p")
+    import re
+    s = s.strip()
+    # Pad single-digit hours: "2:54 PM" → "02:54 PM"
+    s = re.sub(r", (\d):", r", 0\1:", s)
+    # %b = abbreviated month (Apr, May, Jun…), %B = full month — Hevy uses abbreviated
+    return datetime.strptime(s, "%b %d, %Y, %I:%M %p")
 
 
 def parse_set(row: dict) -> dict:
@@ -126,8 +130,11 @@ def main():
     with get_db() as db:
         athlete = db.query(Athlete).first()
         if not athlete:
-            print("\nNo athlete in DB yet. Run 'make sync' first to initialize, then retry.")
-            sys.exit(1)
+            email = os.environ.get("GARMIN_EMAIL", "athlete@ironman.local")
+            athlete = Athlete(email=email, display_name="Nishal")
+            db.add(athlete)
+            db.flush()
+            print(f"Created athlete record for {email}")
 
         for w in workouts:
             existing = db.query(GymWorkout).filter_by(hevy_workout_id=w["hevy_id"]).first()

@@ -36,4 +36,4 @@ install:
 	cd frontend && npm install
 
 frontend:
-	cd frontend && npm run dev
+	cd frontend && PATH="/Users/nishalchintalapati/node/bin:$$PATH" npm run dev

@@ -20,6 +20,7 @@ class Athlete(Base):
     ftp_watts = Column(Integer, nullable=True)       # cycling threshold power
     threshold_pace_per_km = Column(Float, nullable=True)  # running threshold pace
     threshold_css_per_100m = Column(Float, nullable=True) # swim critical swim speed
+    gym_split = Column(String, nullable=True)        # "upper_lower" | "ppl" | "arnold"
     created_at = Column(DateTime, default=datetime.utcnow)
 
     activities = relationship("Activity", back_populates="athlete", cascade="all, delete-orphan")
