@@ -7,17 +7,24 @@ logger = logging.getLogger(__name__)
 TOKEN_DIR = Path(".garmin_tokens")
 
 DISCIPLINE_MAP = {
+    # Swimming
     "swimming": "swimming",
     "pool_swimming": "swimming",
     "open_water_swimming": "swimming",
+    "lap_swimming": "swimming",
+    # Cycling
     "cycling": "cycling",
     "road_biking": "cycling",
     "indoor_cycling": "cycling",
     "virtual_ride": "cycling",
+    "gravel_cycling": "cycling",
+    # Running
     "running": "running",
     "trail_running": "running",
     "track_running": "running",
     "treadmill_running": "running",
+    "street_running": "running",
+    "indoor_running": "running",
 }
 
 
@@ -28,35 +35,23 @@ class GarminClient:
         self.client = self._authenticate()
 
     def _authenticate(self) -> Garmin:
-        client = Garmin(self.email, self.password)
-
         TOKEN_DIR.mkdir(exist_ok=True)
         token_path = TOKEN_DIR / "session"
 
-        # Try loading saved tokens first (skips re-auth on repeat syncs)
-        if token_path.exists():
-            try:
-                client.login(str(token_path))
-                logger.info("Logged in with saved Garmin session tokens")
-                return client
-            except Exception:
-                logger.warning("Saved tokens expired or invalid, re-authenticating")
+        # prompt_mfa is only invoked if running interactively and Garmin demands 2FA.
+        # In headless sync, there's no TTY so this won't be called; saved tokens are used.
+        client = Garmin(
+            self.email,
+            self.password,
+            prompt_mfa=lambda: input("Enter your Garmin MFA code: ").strip(),
+        )
 
-        client.login()
-        logger.info("Authenticated with Garmin Connect")
-
-        # Persist tokens so future syncs don't re-login (garth API varies by version)
-        try:
-            client.garth.dump(str(token_path))
-            logger.info("Session tokens saved for future syncs")
-        except AttributeError:
-            # Older garminconnect versions don't expose garth directly — try garth import
-            try:
-                import garth
-                garth.save(str(token_path))
-                logger.info("Session tokens saved via garth directly")
-            except Exception:
-                logger.info("Token persistence unavailable — will re-authenticate each sync")
+        # login(tokenstore=...) handles everything:
+        #   1. Loads saved tokens from the path if they exist
+        #   2. Falls back to fresh login (email/password) if tokens are missing/expired
+        #   3. Auto-saves new tokens to the path on successful fresh login
+        client.login(tokenstore=str(token_path))
+        logger.info("Logged in to Garmin Connect (tokens: %s)", token_path)
 
         return client
 

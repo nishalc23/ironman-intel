@@ -50,6 +50,16 @@ def _run_sync():
 
         logger.info(f"Sync complete — {new_count} new activities, CTL/ATL/TSB rebuilt")
 
+        # Bust plan cache so next generation reflects new activity data
+        import redis as redis_lib
+        try:
+            r = redis_lib.Redis.from_url(os.environ.get("REDIS_URL", "redis://redis:6379/0"))
+            for key in r.scan_iter(f"plan:{athlete.id}:*"):
+                r.delete(key)
+            logger.info("Plan cache cleared")
+        except Exception:
+            pass
+
 
 @router.post("/")
 def trigger_sync(background_tasks: BackgroundTasks):

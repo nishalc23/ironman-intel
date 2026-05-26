@@ -38,4 +38,5 @@ def list_activities(limit: int = 50, offset: int = 0):
             .limit(limit)
             .all()
         )
-        return rows
+        # Serialize inside the session while objects are still attached
+        return [ActivityOut.model_validate(r) for r in rows]

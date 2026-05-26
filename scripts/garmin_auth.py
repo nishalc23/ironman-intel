@@ -19,26 +19,23 @@ from garminconnect import Garmin
 email    = os.environ.get("GARMIN_EMAIL")    or input("Garmin email: ")
 password = os.environ.get("GARMIN_PASSWORD") or input("Garmin password: ")
 
-print(f"\nLogging in as {email}...")
-client = Garmin(email, password)
-
-try:
-    client.login()
-except Exception as e:
-    if "MFA" in str(e) or "2FA" in str(e) or "factor" in str(e).lower():
-        code = input("Enter your Garmin MFA code: ").strip()
-        client.login(mfa_code=code)
-    else:
-        raise
-
 token_path = Path(".garmin_tokens/session")
 token_path.parent.mkdir(exist_ok=True)
 
-try:
-    client.garth.dump(str(token_path))
-    print(f"\nTokens saved to {token_path}")
-    print("Future syncs will use these tokens — no login needed.")
-except AttributeError:
-    print("\nAuthenticated successfully (token persistence not available in this version).")
+print(f"\nLogging in as {email}...")
 
-print("Done!")
+# prompt_mfa is called automatically if Garmin requires a 2FA code
+client = Garmin(
+    email,
+    password,
+    prompt_mfa=lambda: input("Enter your Garmin MFA code: ").strip(),
+)
+
+# login() with tokenstore will:
+#   1. Try to load existing tokens from the path
+#   2. Fall back to fresh login if tokens are missing/expired
+#   3. Auto-save new tokens to the path on successful login
+client.login(tokenstore=str(token_path))
+
+print(f"\nSuccess! Tokens saved to {token_path}")
+print("Run `make sync` now.")

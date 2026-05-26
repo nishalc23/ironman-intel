@@ -18,6 +18,8 @@ sys.path.insert(0, "/app")
 from db.database import create_tables, get_db
 from db.models import Athlete, Activity
 from services.ingestion.garmin_client import GarminClient
+from compute.tss import estimate_activity_tss
+from compute.load import recompute_load
 
 logging.basicConfig(
     level=logging.INFO,
@@ -100,7 +102,30 @@ def main():
     with get_db() as db:
         athlete = get_or_create_athlete(db, email)
         new_count = ingest_activities(athlete, db, garmin)
-        logger.info(f"Sync complete — {new_count} new activities ingested")
+
+        # Stamp TSS on any activity missing it
+        untssed = (
+            db.query(Activity)
+            .filter(Activity.athlete_id == athlete.id, Activity.tss.is_(None))
+            .all()
+        )
+        for act in untssed:
+            act.tss = estimate_activity_tss(
+                discipline=act.discipline,
+                duration_seconds=act.duration_seconds,
+                avg_hr=act.avg_heart_rate,
+                avg_power=act.avg_power,
+                ftp_watts=athlete.ftp_watts,
+                threshold_hr=None,
+            )
+        if untssed:
+            logger.info(f"Computed TSS for {len(untssed)} activities")
+
+        # Rebuild CTL/ATL/TSB from scratch (last 90 days)
+        from datetime import date, timedelta
+        from_date = date.today() - timedelta(days=90)
+        recompute_load(db, athlete, from_date, date.today())
+        logger.info(f"Sync complete — {new_count} new activities ingested, CTL/ATL/TSB rebuilt")
 
 
 if __name__ == "__main__":
