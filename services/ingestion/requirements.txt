@@ -1,0 +1,6 @@
+garminconnect>=0.2.19
+garth>=0.4.44
+sqlalchemy>=2.0.36
+psycopg2-binary>=2.9.9
+python-dotenv>=1.0.1
+redis>=5.0.1
