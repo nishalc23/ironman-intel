@@ -135,6 +135,7 @@ class GymWorkout(Base):
 
     id = Column(Integer, primary_key=True)
     athlete_id = Column(Integer, ForeignKey("athletes.id"), nullable=False)
+    hevy_workout_id = Column(String, unique=True, nullable=True)  # set when imported from Hevy
     date = Column(Date, nullable=False)
     notes = Column(String, nullable=True)
     duration_minutes = Column(Integer, nullable=True)

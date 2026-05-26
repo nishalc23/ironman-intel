@@ -33,17 +33,31 @@ class GarminClient:
         TOKEN_DIR.mkdir(exist_ok=True)
         token_path = TOKEN_DIR / "session"
 
+        # Try loading saved tokens first (skips re-auth on repeat syncs)
         if token_path.exists():
             try:
                 client.login(str(token_path))
                 logger.info("Logged in with saved Garmin session tokens")
                 return client
-            except GarminConnectAuthenticationError:
-                logger.warning("Saved tokens expired, re-authenticating")
+            except Exception:
+                logger.warning("Saved tokens expired or invalid, re-authenticating")
 
         client.login()
-        client.garth.dump(str(token_path))
-        logger.info("Authenticated with Garmin and saved session tokens")
+        logger.info("Authenticated with Garmin Connect")
+
+        # Persist tokens so future syncs don't re-login (garth API varies by version)
+        try:
+            client.garth.dump(str(token_path))
+            logger.info("Session tokens saved for future syncs")
+        except AttributeError:
+            # Older garminconnect versions don't expose garth directly — try garth import
+            try:
+                import garth
+                garth.save(str(token_path))
+                logger.info("Session tokens saved via garth directly")
+            except Exception:
+                logger.info("Token persistence unavailable — will re-authenticate each sync")
+
         return client
 
     def get_activities(self, limit: int = 100) -> list[dict]:
