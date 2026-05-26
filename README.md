@@ -1,5 +1,7 @@
 # Ironman Intel
 
+**Live demo:** https://nishals-macbook-pro.tail396e25.ts.net *(online when my Mac is on)*
+
 A personal Ironman triathlon training platform that syncs Garmin data, tracks gym sessions, and generates daily AI-powered training plans using Claude.
 
 ![Stack](https://img.shields.io/badge/stack-FastAPI%20%7C%20React%20%7C%20PostgreSQL%20%7C%20Docker-blue)
