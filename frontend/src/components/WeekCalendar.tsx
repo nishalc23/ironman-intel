@@ -73,13 +73,21 @@ function WeekPill({ week, isActive, isCurrent, onClick }: {
 }
 
 function DayColumn({ day, date }: { day: DayPlan; date: Date }) {
-  const [completed, setCompleted] = useState<Record<number, boolean>>({});
+  const storageKey = `completed-${date.toISOString().split("T")[0]}-${day.dayOfWeek}`;
+  const [completed, setCompleted] = useState<Record<number, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch { return {}; }
+  });
   const accent = DAY_ACCENT[day.dayOfWeek] ?? "#6B7280";
   const doneCount = Object.values(completed).filter(Boolean).length;
   const total = day.blocks.filter(b => b.sport !== "rest").length;
   const isToday = date.toDateString() === new Date().toDateString();
-
   const dateLabel = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+  function toggleBlock(i: number) {
+    const next = { ...completed, [i]: !completed[i] };
+    setCompleted(next);
+    localStorage.setItem(storageKey, JSON.stringify(next));
+  }
 
   return (
     <div className="flex flex-col rounded-2xl overflow-hidden"
@@ -123,7 +131,7 @@ function DayColumn({ day, date }: { day: DayPlan; date: Date }) {
             key={i}
             block={block}
             completed={completed[i]}
-            onToggle={() => setCompleted(prev => ({ ...prev, [i]: !prev[i] }))}
+            onToggle={() => toggleBlock(i)}
           />
         ))}
       </div>
