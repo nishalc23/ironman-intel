@@ -33,7 +33,7 @@ export interface ActivityRecord {
 
 export interface GymSet {
   reps: number;
-  weight_kg: number | null;
+  weight_lbs: number | null;
 }
 
 export interface GymExercise {
@@ -65,6 +65,20 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return res.json();
 }
 
+export interface AdaptivePlan {
+  week_number: number;
+  week_start: string;
+  phase: string;
+  adaptation_notes: string | null;
+  volume_adjustment: string | null;
+  missed_sessions: string[];
+  prior_ctl: string | null;
+  prior_atl: string | null;
+  prior_tsb: string | null;
+  days: unknown[];
+  generated_at: string;
+}
+
 export const api = {
   getMetrics: (days = 90) => get<MetricsSummary>(`/metrics/?days=${days}`),
   getActivities: (limit = 30) => get<ActivityRecord[]>(`/activities/?limit=${limit}`),
@@ -75,4 +89,10 @@ export const api = {
   getExerciseNames: () => get<string[]>("/gym/exercises"),
   logGymWorkout: (payload: unknown) => post<GymWorkout>("/gym/", payload),
   triggerSync: () => post<{ status: string }>("/sync/", {}),
+  getAdaptivePlan: (weekNum: number) => get<AdaptivePlan>(`/plan/adaptive/${weekNum}`),
+  triggerAdaptiveGeneration: (weekNum?: number) =>
+    post<{ status: string; week_number: number; adaptation_notes: string }>(
+      `/plan/adaptive/generate${weekNum ? `?week_number=${weekNum}` : ""}`,
+      {}
+    ),
 };

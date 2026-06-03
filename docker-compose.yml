@@ -41,6 +41,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       GARMIN_EMAIL: ${GARMIN_EMAIL}
       GARMIN_PASSWORD: ${GARMIN_PASSWORD}
+      TZ: America/Los_Angeles
     volumes:
       - .:/app
       - garmin_tokens:/app/.garmin_tokens

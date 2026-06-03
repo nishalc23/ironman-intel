@@ -4,7 +4,7 @@ from garminconnect import Garmin, GarminConnectAuthenticationError
 
 logger = logging.getLogger(__name__)
 
-TOKEN_DIR = Path(".garmin_tokens")
+TOKEN_DIR = Path("/app/.garmin_tokens")
 
 DISCIPLINE_MAP = {
     # Swimming
@@ -35,21 +35,15 @@ class GarminClient:
         self.client = self._authenticate()
 
     def _authenticate(self) -> Garmin:
-        TOKEN_DIR.mkdir(exist_ok=True)
         token_path = TOKEN_DIR / "session"
+        token_path.mkdir(parents=True, exist_ok=True)
 
-        # prompt_mfa is only invoked if running interactively and Garmin demands 2FA.
-        # In headless sync, there's no TTY so this won't be called; saved tokens are used.
         client = Garmin(
             self.email,
             self.password,
             prompt_mfa=lambda: input("Enter your Garmin MFA code: ").strip(),
         )
 
-        # login(tokenstore=...) handles everything:
-        #   1. Loads saved tokens from the path if they exist
-        #   2. Falls back to fresh login (email/password) if tokens are missing/expired
-        #   3. Auto-saves new tokens to the path on successful fresh login
         client.login(tokenstore=str(token_path))
         logger.info("Logged in to Garmin Connect (tokens: %s)", token_path)
 
@@ -68,6 +62,20 @@ class GarminClient:
     def get_hrv_data(self, date_str: str) -> dict:
         """HRV (Heart Rate Variability) — key overtraining signal."""
         return self.client.get_hrv_data(date_str)
+
+    def get_sleep_data(self, date_str: str) -> dict:
+        """Sleep data for a given date — score, stages, HRV, body battery."""
+        try:
+            return self.client.get_sleep_data(date_str)
+        except Exception:
+            return {}
+
+    def get_body_battery(self, date_str: str) -> list:
+        """Body battery levels throughout the day."""
+        try:
+            return self.client.get_body_battery(date_str)
+        except Exception:
+            return []
 
     @staticmethod
     def map_discipline(type_key: str) -> str:

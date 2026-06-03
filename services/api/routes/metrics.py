@@ -70,7 +70,11 @@ def get_metrics(days: int = 90):
             for r in rows
         ]
 
-        today_row = next((h for h in history if h.date == date.today()), None)
+        # Use today's row if it has activity; otherwise fall back to the
+        # most recent day with real TSS (handles UTC-vs-Pacific timezone gap).
+        today_row = next((h for h in reversed(history) if h.date == date.today() and h.daily_tss > 0), None)
+        if today_row is None:
+            today_row = next((h for h in reversed(history) if h.daily_tss > 0), None) or (history[-1] if history else None)
 
         return MetricsSummaryOut(
             athlete_name=athlete.display_name or athlete.email,

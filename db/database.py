@@ -4,6 +4,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from contextlib import contextmanager
 
 from db.models import Base
+from db.weekly_plan_model import WeeklyAdaptivePlan  # noqa: F401 — registers model with Base
+from db.sleep_model import SleepLog                  # noqa: F401 — registers model with Base
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 

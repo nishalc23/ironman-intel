@@ -14,7 +14,14 @@ client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
 
 
 def _format_activity(act: Activity) -> str:
-    dist = f"{act.distance_meters/1000:.1f}km" if act.distance_meters else "—"
+    # Swim in meters, run/bike in miles
+    if act.distance_meters:
+        if act.discipline == "swimming":
+            dist = f"{act.distance_meters:.0f}m"
+        else:
+            dist = f"{act.distance_meters / 1609.34:.1f}mi"
+    else:
+        dist = "—"
     hr   = f"avg HR {act.avg_heart_rate}bpm" if act.avg_heart_rate else ""
     pwr  = f"avg {act.avg_power}W" if act.avg_power else ""
     tss  = f"TSS {act.tss:.0f}" if act.tss else ""
@@ -86,21 +93,16 @@ def _classify_exercise_name(name: str) -> str:
     return "upper"
 
 
-def _kg_to_lbs(kg: float | None) -> int | None:
-    """Convert kg to lbs, rounded to nearest integer."""
-    return round(kg * 2.2046) if kg is not None else None
-
-
 def _build_exercise_library(all_gym: list[GymWorkout]) -> dict[str, dict]:
     """
     Walk all gym history and build a dict of exercise_name → {last_lbs, category, typical_position}.
-    - last_lbs: heaviest working-set weight in the most recent session, converted to lbs
+    - last_lbs: heaviest working-set weight in lbs from the most recent session
     - typical_position: median position index across recent sessions (for ordering)
     Skips cardio-only entries (treadmill, swimming, etc.).
+    Handles both new format (weight_lbs) and legacy format (weight_kg → converted).
     """
     CARDIO = {"treadmill", "swimming", "stair machine", "bike", "elliptical", "rower"}
     library: dict[str, dict] = {}
-    # Track positions: name → list of positions across sessions
     positions: dict[str, list[int]] = {}
 
     for workout in all_gym:  # oldest first so latest overwrites for weight
@@ -116,8 +118,14 @@ def _build_exercise_library(all_gym: list[GymWorkout]) -> dict[str, dict]:
             ]
             if not working_sets:
                 continue
-            weights = [s["weight_kg"] for s in working_sets if s.get("weight_kg")]
-            best_lbs = _kg_to_lbs(max(weights)) if weights else None
+            # Support both weight_lbs (new) and weight_kg (legacy Hevy import)
+            lbs_values = []
+            for s in working_sets:
+                if s.get("weight_lbs") is not None:
+                    lbs_values.append(s["weight_lbs"])
+                elif s.get("weight_kg") is not None:
+                    lbs_values.append(round(s["weight_kg"] * 2.2046))
+            best_lbs = max(lbs_values) if lbs_values else None
             category = _classify_exercise_name(name)
             library[name] = {"category": category, "last_lbs": best_lbs}
             positions.setdefault(name, []).append(pos)
@@ -202,11 +210,12 @@ TRI DISCIPLINE: {allowed_tri}"""
 
 **Tri Session**
 {forced_tri or "[discipline per TRI DISCIPLINE rule]"} · [duration] · [single intensity target]"""
-        gym_rules = f"""1. {"Use " + forced_tri + " for the tri session." if forced_tri else "Pick tri discipline matching the split day."}
-2. SPLIT RULES (never break):
-   Upper day → Bike or Run ONLY. NO swim (swim is heavy upper body — shoulders/back overlap).
-   Lower day → Swim or Bike ONLY. NO run (legs already taxed from lower gym).
-3. If TSB < -20, replace tri with "Rest"."""
+        gym_rules = f"""1. FIXED PAIRINGS (athlete's training structure — never change):
+   Upper day → RUN always. No bike, no swim.
+   Lower day → BIKE always. No run, no swim.
+2. Use miles for run/bike distances, meters for swim.
+3. Give a specific distance target, not a vague "go for a run".
+4. If TSB < -20, shorten the session 50% — don't skip it."""
     else:
         if discipline and discipline not in ("", "rest"):
             discipline_line = "Bike → Run (brick)" if discipline == "brick" else discipline.capitalize()
@@ -216,7 +225,7 @@ TRI DISCIPLINE: {allowed_tri}"""
             rest_note = "FULL REST DAY. No gym, no cardio. Prescribe sleep, nutrition, and recovery only."
         gym_section = f"NO GYM TODAY.\n{rest_note}\nTRI DISCIPLINE: {discipline_line}\nRECENT GYM (for context):\n{gym_block}"
         gym_format = f"\n**Recovery Session**\n{discipline_line} · [20-40min] · [Z1-Z2 easy — recovery pace only]" if discipline and discipline not in ("", "rest") else "\n**Full Rest**\nNo training — sleep 8-9h, hydrate, eat well."
-        gym_rules = "1. Rest day = low intensity only. No hard efforts, no intervals.\n2. Keep it short and easy — this is active recovery, not training."
+        gym_rules = "1. REST DAY = SWIM always. Give a specific meter target (e.g. 1000m, 1500m) broken into sets.\n2. Use meters for swim distances. Keep HR low (Z1-Z2), no intensity."
 
     days_to_race = (date(2026, 12, 6) - date.today()).days
     weeks_to_race = days_to_race // 7
@@ -274,12 +283,12 @@ TRI DISCIPLINE: {allowed_tri}"""
         f"→ PRIORITIZE missing disciplines when choosing today's tri session."
     )
 
-    return f"""Ironman 70.3 coach. Write a short, scannable training plan for today. No explanations, no fluff.
+    return f"""Ironman 70.3 coach. Write a short, scannable training plan for today. No explanations, no fluff. Use MILES for run/bike, METERS for swim.
 
 RACE: IRONMAN 70.3 La Quinta — Dec 6, 2026 ({days_to_race} days out · {weeks_to_race} weeks)
-COURSE: 1.9km swim (Lake Cahuilla) · 90km bike (flat, fast) · 21.1km run (2-loop Silver Rock) · 8h30m cutoff
+COURSE: 1,200m swim (Lake Cahuilla) · 56mi bike (flat, fast) · 13.1mi run (2-loop Silver Rock) · 8h30m cutoff
 
-ATHLETE: {athlete.display_name or "Athlete"} | FTP: {athlete.ftp_watts or 200}W | Run threshold: {f"{athlete.threshold_pace_per_km} min/km" if athlete.threshold_pace_per_km else "unknown"}
+ATHLETE: {athlete.display_name or "Athlete"} | FTP: {athlete.ftp_watts or 200}W | Run threshold: {f"{athlete.threshold_pace_per_km} min/mi" if athlete.threshold_pace_per_km else "unknown"}
 LOAD: CTL {ctl} · ATL {atl} · TSB {tsb}
 
 TRAINING PHASE: {phase} ({days_to_race} days out)
@@ -367,5 +376,172 @@ def generate_plan(db: Session, athlete: Athlete, gym: bool = True, discipline: s
         _redis.setex(cache_key, 86400, plan_text)
     except Exception:
         pass  # Redis unavailable — just return without caching
+
+    return plan_text
+
+
+# ---------------------------------------------------------------------------
+# Weekly training schedule generator
+# ---------------------------------------------------------------------------
+
+SUB5_COACHING = """
+=== SUB-5:00 IRONMAN 70.3 COACHING KNOWLEDGE ===
+
+RACE DISTANCE: 1.2mi swim · 56mi bike · 13.1mi run
+SUB-5 TARGET SPLITS:
+  Swim:  30-32 min  (1:34-1:41/100m pace)
+  T1+T2: 3-4 min
+  Bike:  2:18-2:24  (23-24 mph average, ~75-80% FTP)
+  Run:   2:04-2:10  (9:27-9:54/mi — this is POST-BIKE pace, legs are already tired)
+  Total: 4:58-5:08
+
+ATHLETE'S TRAINING CYCLE (fixed rotation, no exceptions):
+  Day A → Upper gym + Run
+  Day B → Lower gym + Bike
+  Day C → Rest (no gym) + Swim
+  Repeat A → B → C → A → B → C...
+
+FOUNDATION PHASE TRAINING TARGETS (24+ weeks out):
+  Goal: build aerobic base, establish all 3 disciplines, no racing yet.
+
+  RUN (targeting 9:30/mi race pace by race day):
+  - Easy run:  3-5mi @ 10:30-11:00/mi · HR 130-145 · conversational
+  - Tempo run: 2-3mi @ 8:45-9:15/mi · HR 158-168 · comfortably hard (once every 2 Upper cycles)
+  - Long run:  6-8mi @ 10:30/mi · HR 130-145 (assign on 3rd Upper day of week if it occurs)
+  → DO NOT run faster than 9:15/mi in easy runs — you burn out aerobic base
+  → 182 bpm runs are RACE EFFORT, not training — save that for race day
+
+  BIKE (targeting 23mph average by race day):
+  - Easy spin:    12-15mi @ RPE 5/10 · easy gear · HR 120-135
+  - Moderate:     15-20mi @ RPE 6-7/10 · HR 135-150
+  - Long ride:    20-30mi @ RPE 6/10 · steady aerobic (assign once/week if 2+ Lower days)
+  → Build from 12mi now to 40mi by race-specific phase
+
+  SWIM (targeting 1:35/100m by race day; currently ~1:50-2:00/100m):
+  - Technique:  800-1200m · 50m repeats w/ 30s rest · focus on form NOT speed
+  - Endurance:  1200-1600m · 100m repeats w/ 30s rest · build aerobic engine
+  - Threshold:  (introduce week 8+) 200m repeats descending pace
+  → RIGHT NOW: form first. Once stroke is efficient, speed comes fast.
+  → Build weekly swim volume from 1000m → 3000m by peak phase
+
+WEEKLY VOLUME TARGETS (Foundation):
+  Run:  8-12 miles/week total
+  Bike: 25-40 miles/week total
+  Swim: 1500-2500m/week total
+
+KEY COACHING RULES:
+1. Easy days MUST be easy (HR <145). If it's not easy, it's not an easy day.
+2. The run after Upper gym is always shorter/easier than a standalone run.
+3. Swim on rest days = no leg fatigue = can push pace slightly more.
+4. Never do tempo run AND long run in same A-B-C cycle.
+5. Alternate: easy run → tempo run → easy run → easy run → tempo run...
+"""
+
+
+def generate_weekly_plan(db: Session, athlete: Athlete) -> str:
+    """Generate a structured 7-day training schedule for the coming week."""
+    today = date.today()
+    # Cache for the whole week (Mon–Sun)
+    days_since_monday = today.weekday()
+    week_of = today - timedelta(days=days_since_monday)
+    cache_key = f"weekly:{athlete.id}:{week_of}"
+
+    cached = _redis.get(cache_key)
+    if cached:
+        return cached.decode()
+
+    # Get recent gym history to determine where in the cycle we are
+    recent_gym = (
+        db.query(GymWorkout)
+        .filter(
+            GymWorkout.athlete_id == athlete.id,
+            GymWorkout.date >= today - timedelta(days=14),
+        )
+        .order_by(GymWorkout.date.desc())
+        .all()
+    )
+
+    recent_activities = (
+        db.query(Activity)
+        .filter(
+            Activity.athlete_id == athlete.id,
+            Activity.start_time >= today - timedelta(days=7),
+        )
+        .order_by(Activity.start_time.desc())
+        .all()
+    )
+
+    today_metrics = (
+        db.query(DailyMetrics)
+        .filter_by(athlete_id=athlete.id, date=today)
+        .first()
+    )
+
+    days_to_race = (date(2026, 12, 6) - today).days
+    weeks_to_race = days_to_race // 7
+    ctl = f"{today_metrics.ctl:.1f}" if today_metrics else "unknown"
+    atl = f"{today_metrics.atl:.1f}" if today_metrics else "unknown"
+    tsb = f"{today_metrics.tsb:.1f}" if today_metrics else "unknown"
+
+    # Determine next split in cycle from last gym session
+    last_gym_type = "unknown"
+    for g in recent_gym:
+        t = _classify_gym_day(g)
+        if t in ("upper", "lower"):
+            last_gym_type = t
+            break
+
+    if last_gym_type == "upper":
+        next_split = "lower"
+    elif last_gym_type == "lower":
+        next_split = "rest"
+    else:
+        next_split = "upper"
+
+    recent_acts_fmt = "\n".join(_format_activity(a) for a in recent_activities) or "  None"
+
+    prompt = f"""{SUB5_COACHING}
+
+ATHLETE: {athlete.display_name or "Athlete"} | CTL: {ctl} | ATL: {atl} | TSB: {tsb}
+RACE: IRONMAN 70.3 La Quinta — Dec 6, 2026 ({weeks_to_race} weeks out)
+TODAY: {today.strftime("%A %b %d, %Y")}
+WEEK OF: {week_of.strftime("%b %d")}
+NEXT SPLIT IN CYCLE: {next_split.upper()} (continue the A→B→C rotation from here)
+
+RECENT ACTIVITY:
+{recent_acts_fmt}
+
+Generate a 7-day training schedule starting from TODAY ({today.strftime("%A")}).
+Follow the A→B→C rotation strictly. Start at {next_split.upper()} for today.
+
+RESPOND IN EXACTLY THIS FORMAT — one line per day, pipe-separated, 7 lines total:
+DAY|SPLIT|TITLE|WORKOUT|PURPOSE
+
+Rules:
+- DAY: Mon / Tue / Wed / Thu / Fri / Sat / Sun
+- SPLIT: upper / lower / rest
+- TITLE: "Upper + Run" / "Lower + Bike" / "Rest + Swim"
+- WORKOUT: specific (e.g. "4mi easy @ 10:30/mi · HR 130-145" or "1200m · 20×50m · 30s rest")
+- PURPOSE: 3-5 words (e.g. "Aerobic base build")
+- Use miles for run/bike, meters for swim
+- Vary runs: easy → tempo → easy pattern
+- No fluff. No headers. Just 7 pipe-separated lines."""
+
+    response = client.messages.create(
+        model="claude-opus-4-7",
+        max_tokens=600,
+        system="You are a precise triathlon coach. Output exactly 7 pipe-separated lines, nothing else.",
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    plan_text = response.content[0].text.strip()
+
+    # Cache until end of week (Sunday midnight)
+    days_until_sunday = 6 - today.weekday()
+    ttl = (days_until_sunday + 1) * 86400
+    try:
+        _redis.setex(cache_key, ttl, plan_text)
+    except Exception:
+        pass
 
     return plan_text

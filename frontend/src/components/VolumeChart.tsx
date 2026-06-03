@@ -26,9 +26,9 @@ function rollupByWeek(history: DailyMetric[]) {
     if (!weeks[key]) {
       weeks[key] = { week: weekLabel(key), Swim: 0, Bike: 0, Run: 0 };
     }
-    weeks[key].Swim += d.swim_km;
-    weeks[key].Bike += d.bike_km;
-    weeks[key].Run  += d.run_km;
+    weeks[key].Swim += d.swim_km * 1000;            // meters
+    weeks[key].Bike += d.bike_km * 0.621371;        // miles
+    weeks[key].Run  += d.run_km  * 0.621371;        // miles
   });
 
   return Object.values(weeks).map((w) => ({
@@ -40,12 +40,13 @@ function rollupByWeek(history: DailyMetric[]) {
 }
 
 export default function VolumeChart({ history }: Props) {
-  const data = rollupByWeek(history);
+  // Show only the last 8 weeks so the current week is clearly visible
+  const data = rollupByWeek(history).slice(-4);
 
   return (
     <div className="card">
       <h2 className="text-sm font-semibold text-ironman-muted uppercase tracking-wider mb-4">
-        Weekly Volume (km)
+        Weekly Volume · Swim (m) · Run/Bike (mi)
       </h2>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
@@ -57,9 +58,9 @@ export default function VolumeChart({ history }: Props) {
             labelStyle={{ color: "#F3F4F6" }}
           />
           <Legend wrapperStyle={{ fontSize: 12, color: "#9CA3AF" }} />
-          <Bar dataKey="Swim" stackId="a" fill="#38BDF8" radius={[0, 0, 0, 0]} />
-          <Bar dataKey="Bike" stackId="a" fill="#A78BFA" />
-          <Bar dataKey="Run"  stackId="a" fill="#F97316" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="Swim" fill="#38BDF8" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="Bike" fill="#A78BFA" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="Run"  fill="#F97316" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

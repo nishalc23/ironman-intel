@@ -1,20 +1,78 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "./api/client";
 import type { MetricsSummary, ActivityRecord, GymWorkout } from "./api/client";
+import WeekCalendar from "./components/WeekCalendar";
+import SleepCard from "./components/SleepCard";
 import FitnessChart from "./components/FitnessChart";
-import VolumeChart from "./components/VolumeChart";
 import ActivityList from "./components/ActivityList";
-import TrainingPlan from "./components/TrainingPlan";
 import GymLog from "./components/GymLog";
+import { RACE_DATE } from "./data/plan";
 
-function StatCard({ label, value, sub, color }: {
-  label: string; value: string; sub?: string; color?: string;
+function daysUntilRace() {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.ceil((RACE_DATE.getTime() - now.getTime()) / 86400000);
+}
+
+function HUDStat({ label, value, sub, color, unit }: {
+  label: string; value: string | number | null; sub?: string; color: string; unit?: string;
 }) {
+  const display = value != null ? String(value) : "—";
   return (
-    <div className="card flex flex-col gap-1">
-      <p className="text-xs text-ironman-muted uppercase tracking-wider">{label}</p>
-      <p className={`text-3xl font-bold ${color ?? "text-white"}`}>{value}</p>
-      {sub && <p className="text-xs text-ironman-muted">{sub}</p>}
+    <div className="relative flex flex-col gap-2 p-4 rounded-2xl border border-white/6 overflow-hidden"
+      style={{ background: "rgba(255,255,255,0.025)" }}>
+      {/* Corner accent */}
+      <div className={`absolute top-0 left-0 w-8 h-8 opacity-20`}
+        style={{ background: `radial-gradient(circle at 0 0, ${color}, transparent 70%)` }} />
+      <span className="text-[10px] font-semibold tracking-widest uppercase text-zinc-500">{label}</span>
+      <div className="flex items-end gap-1">
+        <span className={`text-3xl font-black mono flicker`} style={{ color }}>{display}</span>
+        {unit && <span className="text-xs text-zinc-600 mb-1">{unit}</span>}
+      </div>
+      {sub && <span className="text-[11px] text-zinc-600 leading-tight">{sub}</span>}
+      {/* Bottom glow line */}
+      <div className="absolute bottom-0 left-0 right-0 h-px opacity-40"
+        style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
+    </div>
+  );
+}
+
+function SyncButton({ syncing, onClick }: { syncing: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={syncing}
+      className="relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 border border-white/10 hover:border-ironman-red/50"
+      style={{ background: "rgba(255,255,255,0.04)" }}
+    >
+      {syncing ? (
+        <>
+          <span className="w-3 h-3 border border-ironman-red border-t-transparent rounded-full animate-spin" />
+          <span className="text-zinc-400">Syncing…</span>
+        </>
+      ) : (
+        <>
+          <span className="text-ironman-red text-base">⟳</span>
+          <span className="text-zinc-300 hidden sm:inline">Sync</span>
+        </>
+      )}
+    </button>
+  );
+}
+
+function RaceCountdown({ days }: { days: number }) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-2 rounded-xl border border-ironman-red/20 glow-pulse"
+      style={{ background: "rgba(232,0,28,0.06)" }}>
+      <div className="flex flex-col items-center">
+        <span className="text-2xl font-black mono text-ironman-red leading-none flicker">{days}</span>
+        <span className="text-[9px] tracking-widest text-zinc-500 uppercase">days</span>
+      </div>
+      <div className="w-px h-8 bg-ironman-red/20" />
+      <div className="flex flex-col">
+        <span className="text-[10px] font-semibold text-zinc-400">IRONMAN 70.3</span>
+        <span className="text-[10px] text-zinc-600">La Quinta · Dec 6, 2026</span>
+      </div>
     </div>
   );
 }
@@ -24,7 +82,6 @@ export default function App() {
   const [activities, setActivities] = useState<ActivityRecord[]>([]);
   const [gymWorkouts, setGymWorkouts] = useState<GymWorkout[]>([]);
   const [syncing, setSyncing] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [apiDown, setApiDown] = useState(false);
 
   const loadAll = useCallback(async () => {
@@ -40,8 +97,6 @@ export default function App() {
       setApiDown(false);
     } catch {
       setApiDown(true);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -51,118 +106,118 @@ export default function App() {
     setSyncing(true);
     try {
       await api.triggerSync();
-      setTimeout(loadAll, 8000); // give sync time to complete
+      setTimeout(loadAll, 8000);
     } finally {
       setSyncing(false);
     }
   }
 
   const today = metrics?.today;
-  const tsbColor =
-    !today?.tsb ? "text-white" :
-    today.tsb > 5 ? "text-green-400" :
-    today.tsb < -30 ? "text-red-400" :
-    today.tsb < -10 ? "text-yellow-400" :
-    "text-white";
+  const dtr = daysUntilRace();
+
+  const tsbStatus = !today?.tsb ? { label: "No data", color: "#6B7280" }
+    : today.tsb > 5   ? { label: "Race ready", color: "#34D399" }
+    : today.tsb < -30 ? { label: "Danger zone", color: "#F87171" }
+    : today.tsb < -10 ? { label: "Accumulating", color: "#FBBF24" }
+    : { label: "Training load", color: "#A78BFA" };
 
   return (
-    <div className="min-h-screen bg-ironman-dark">
+    <div className="min-h-screen grid-bg" style={{ background: "#080810" }}>
+      {/* Ambient top glow */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] opacity-10 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at top, #E8001C, transparent 70%)" }} />
+
       {/* Header */}
-      <header className="border-b border-ironman-border px-6 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-50 border-b border-white/6 px-5 py-3 flex items-center justify-between"
+        style={{ background: "rgba(8,8,16,0.85)", backdropFilter: "blur(24px)" }}>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-ironman-red rounded-lg flex items-center justify-center text-white font-black text-sm">
-            IM
+          {/* Logo */}
+          <div className="relative w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-sm shrink-0 overflow-hidden"
+            style={{ background: "linear-gradient(135deg, #E8001C, #9B000E)" }}>
+            <span className="relative z-10">IM</span>
+            <div className="absolute inset-0 opacity-30"
+              style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.3), transparent)" }} />
           </div>
           <div>
-            <h1 className="font-bold text-white text-sm leading-none">Ironman Intel</h1>
-            <p className="text-xs text-ironman-muted mt-0.5">
-              {metrics?.athlete_name ?? "Loading…"}
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-bold text-white tracking-tight">Ironman Intel</h1>
+              <span className="hidden sm:block text-[10px] border border-ironman-red/30 text-ironman-red px-1.5 py-0.5 rounded mono">v2</span>
+            </div>
+            <p className="text-[11px] text-zinc-600 mono">
+              {metrics?.athlete_name ?? "nishal"} · sub-5:00 target
             </p>
           </div>
         </div>
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="bg-[#1A1A1A] hover:bg-[#2A2A2A] disabled:opacity-50 border border-ironman-border text-white text-xs font-medium px-4 py-2 rounded-xl transition-colors flex items-center gap-2"
-        >
-          {syncing ? (
-            <>
-              <span className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-              Syncing…
-            </>
-          ) : (
-            "⟳ Sync Garmin"
-          )}
-        </button>
+        <div className="flex items-center gap-3">
+          <RaceCountdown days={dtr} />
+          <SyncButton syncing={syncing} onClick={handleSync} />
+        </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-6 space-y-5">
+      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+
+        {/* API down banner */}
         {apiDown && (
-          <div className="bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 text-sm rounded-xl px-4 py-3">
-            API is not running. Start it with <code className="font-mono bg-black/30 px-1 rounded">make api</code> then refresh.
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-yellow-500/20 text-yellow-400 text-xs"
+            style={{ background: "rgba(234,179,8,0.05)" }}>
+            <span className="text-base">⚠</span>
+            <span>API offline — run <code className="mono bg-black/30 px-1 py-0.5 rounded">make api</code> to connect live data</span>
           </div>
         )}
 
-        {loading && !apiDown && (
-          <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-2 border-ironman-red border-t-transparent rounded-full animate-spin" />
+        {/* ── HUD STAT ROW ─────────────────────────────────────── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <HUDStat
+            label="Fitness · CTL"
+            value={today?.ctl != null ? Math.round(today.ctl) : null}
+            sub="42-day chronic load"
+            color="#38BDF8"
+          />
+          <HUDStat
+            label="Fatigue · ATL"
+            value={today?.atl != null ? Math.round(today.atl) : null}
+            sub="7-day acute load"
+            color="#FB923C"
+          />
+          <HUDStat
+            label="Form · TSB"
+            value={today?.tsb != null ? Math.round(today.tsb) : null}
+            sub={tsbStatus.label}
+            color={tsbStatus.color}
+          />
+          <HUDStat
+            label="TSS Today"
+            value={today?.daily_tss != null ? Math.round(today.daily_tss) : 0}
+            sub="training stress score"
+            color="#A78BFA"
+          />
+        </div>
+
+        {/* ── CHARTS ROW ───────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-3">
+            <FitnessChart history={metrics?.history ?? []} />
           </div>
-        )}
+        </div>
 
-        {!loading && !apiDown && (
-          <>
-            {/* Stat strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <StatCard
-                label="Fitness (CTL)"
-                value={today?.ctl != null ? Math.round(today.ctl).toString() : "—"}
-                sub="42-day base"
-                color="text-blue-400"
-              />
-              <StatCard
-                label="Fatigue (ATL)"
-                value={today?.atl != null ? Math.round(today.atl).toString() : "—"}
-                sub="7-day load"
-                color="text-orange-400"
-              />
-              <StatCard
-                label="Form (TSB)"
-                value={today?.tsb != null ? Math.round(today.tsb).toString() : "—"}
-                sub={
-                  !today?.tsb ? "" :
-                  today.tsb > 5 ? "Fresh — race ready" :
-                  today.tsb < -30 ? "Danger zone" :
-                  today.tsb < -10 ? "Accumulating fatigue" :
-                  "Normal training load"
-                }
-                color={tsbColor}
-              />
-              <StatCard
-                label="TSS Today"
-                value={today?.daily_tss != null ? Math.round(today.daily_tss).toString() : "0"}
-                sub="training stress"
-              />
-            </div>
+        {/* ── DIVIDER ──────────────────────────────────────────── */}
+        <div className="flex items-center gap-4">
+          <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(232,0,28,0.3), transparent)" }} />
+          <span className="text-[10px] tracking-widest text-zinc-600 uppercase mono">26-week plan</span>
+          <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(232,0,28,0.3), transparent)" }} />
+        </div>
 
-            {/* Charts row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <FitnessChart history={metrics?.history ?? []} />
-              <VolumeChart history={metrics?.history ?? []} />
-            </div>
+        {/* ── WEEK CALENDAR ────────────────────────────────────── */}
+        <WeekCalendar />
 
-            {/* Training plan + activity list */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <TrainingPlan riskLevel={metrics?.overtraining_risk ?? "low"} />
-              <ActivityList activities={activities} />
-            </div>
+        {/* ── SLEEP + ACTIVITY ─────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <SleepCard />
+          <ActivityList activities={activities} />
+        </div>
 
-            {/* Gym log */}
-            <GymLog
-              recentWorkouts={gymWorkouts}
-              onSaved={loadAll}
-            />
-          </>
-        )}
+        {/* ── GYM LOG ──────────────────────────────────────────── */}
+        <GymLog recentWorkouts={gymWorkouts} onSaved={loadAll} />
       </main>
     </div>
   );

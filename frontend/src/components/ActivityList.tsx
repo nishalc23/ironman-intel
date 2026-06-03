@@ -17,9 +17,14 @@ function fmtDuration(s: number) {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-function fmtDist(m: number | null) {
-  if (!m) return "—";
-  return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`;
+function fmtDist(meters: number | null, discipline: string) {
+  if (!meters) return "—";
+  if (discipline === "swimming") {
+    return `${Math.round(meters)} m`;
+  }
+  // run + bike in miles
+  const miles = meters / 1609.34;
+  return `${miles.toFixed(1)} mi`;
 }
 
 function fmtDate(iso: string) {
@@ -51,7 +56,7 @@ export default function ActivityList({ activities }: Props) {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm font-medium">{fmtDist(a.distance_meters)}</p>
+              <p className="text-sm font-medium">{fmtDist(a.distance_meters, a.discipline)}</p>
               <p className="text-xs text-ironman-muted">
                 {fmtDuration(a.duration_seconds)}
                 {a.avg_heart_rate ? ` · ${a.avg_heart_rate} bpm` : ""}

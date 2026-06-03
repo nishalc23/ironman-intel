@@ -9,7 +9,7 @@ sys.path.insert(0, "/app")
 from db.database import get_db
 from db.models import Athlete, Activity
 from services.ingestion.garmin_client import GarminClient
-from services.ingestion.main import get_or_create_athlete, ingest_activities
+from services.ingestion.main import get_or_create_athlete, ingest_activities, ingest_sleep
 from compute.tss import estimate_activity_tss
 from compute.load import recompute_load
 
@@ -48,7 +48,10 @@ def _run_sync():
         from_date = date.today() - timedelta(days=90)
         recompute_load(db, athlete_obj, from_date, date.today())
 
-        logger.info(f"Sync complete — {new_count} new activities, CTL/ATL/TSB rebuilt")
+        # Pull 14 days of sleep + HRV data
+        sleep_count = ingest_sleep(athlete_obj, db, garmin, days=14)
+
+        logger.info(f"Sync complete — {new_count} new activities, {sleep_count} sleep logs, CTL/ATL/TSB rebuilt")
 
         # Bust plan cache so next generation reflects new activity data
         import redis as redis_lib

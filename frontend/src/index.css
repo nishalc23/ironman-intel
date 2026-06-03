@@ -2,12 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+* { box-sizing: border-box; }
+
 body {
-  background-color: #0D0D0D;
-  color: #F3F4F6;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  background-color: #080810;
+  color: #E8EAF0;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* Glass card */
 .card {
-  @apply bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-5;
+  @apply relative rounded-2xl p-5;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(20px);
 }
+
+/* Glow card */
+.card-glow {
+  @apply card;
+  box-shadow: 0 0 0 1px rgba(232,0,28,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Neon border pulse */
+@keyframes border-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(232,0,28,0.3), 0 0 20px rgba(232,0,28,0.1); }
+  50%       { box-shadow: 0 0 14px rgba(232,0,28,0.5), 0 0 35px rgba(232,0,28,0.2); }
+}
+.glow-pulse { animation: border-glow 3s ease-in-out infinite; }
+
+/* Scanning line animation */
+@keyframes scan {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* Grid background */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(232,0,28,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,0,28,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Data HUD bar */
+.hud-bar {
+  @apply relative overflow-hidden rounded-full;
+  height: 3px;
+  background: rgba(255,255,255,0.06);
+}
+.hud-bar-fill {
+  @apply absolute inset-y-0 left-0 rounded-full;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sport tag */
+.tag-swim   { @apply bg-cyan-500/15 border border-cyan-500/30 text-cyan-400; }
+.tag-bike   { @apply bg-emerald-500/15 border border-emerald-500/30 text-emerald-400; }
+.tag-run    { @apply bg-orange-500/15 border border-orange-500/30 text-orange-400; }
+.tag-gym    { @apply bg-violet-500/15 border border-violet-500/30 text-violet-400; }
+.tag-brick  { @apply bg-yellow-500/15 border border-yellow-500/30 text-yellow-400; }
+.tag-rest   { @apply bg-zinc-700/40 border border-zinc-600/30 text-zinc-500; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(232,0,28,0.3); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(232,0,28,0.6); }
+
+/* Number glitch animation */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.4; }
+  94% { opacity: 1; }
+  96% { opacity: 0.6; }
+  97% { opacity: 1; }
+}
+.flicker { animation: flicker 6s ease-in-out infinite; }

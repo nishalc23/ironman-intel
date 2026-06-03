@@ -17,6 +17,7 @@ sys.path.insert(0, "/app")
 
 from db.database import create_tables, get_db
 from db.models import Athlete, Activity
+from db.sleep_model import SleepLog
 from services.ingestion.garmin_client import GarminClient
 from compute.tss import estimate_activity_tss
 from compute.load import recompute_load
@@ -89,6 +90,118 @@ def ingest_activities(athlete: Athlete, db, garmin: GarminClient) -> int:
     return new_count
 
 
+def _compute_readiness(score: int | None, hrv: float | None, resting_hr: int | None) -> tuple[int, str]:
+    """Compute a 0-100 readiness score and green/yellow/red signal."""
+    points = 0
+    count = 0
+
+    if score is not None:
+        points += score
+        count += 1
+
+    if hrv is not None:
+        # HRV 60+ = excellent, 40-60 = good, 20-40 = fair, <20 = poor
+        hrv_score = min(100, int(hrv * 1.5))
+        points += hrv_score
+        count += 1
+
+    if resting_hr is not None:
+        # Lower resting HR = better recovered (45=100pts, 70=0pts)
+        hr_score = max(0, min(100, int((70 - resting_hr) * 4)))
+        points += hr_score
+        count += 1
+
+    readiness = int(points / count) if count else 50
+
+    if readiness >= 70:
+        signal = "green"
+    elif readiness >= 45:
+        signal = "yellow"
+    else:
+        signal = "red"
+
+    return readiness, signal
+
+
+def ingest_sleep(athlete: Athlete, db, garmin: GarminClient, days: int = 14) -> int:
+    """Pull last N days of sleep data from Garmin and store in sleep_logs."""
+    from datetime import date, timedelta
+    new_count = 0
+
+    for i in range(days):
+        day = date.today() - timedelta(days=i)
+        date_str = day.isoformat()
+
+        # Skip if already have today's data
+        existing = db.query(SleepLog).filter_by(athlete_id=athlete.id, date=day).first()
+        if existing and i > 1:  # always re-fetch yesterday and today
+            continue
+
+        raw = garmin.get_sleep_data(date_str)
+        if not raw:
+            continue
+
+        # Parse Garmin sleep response — field names confirmed from real API
+        daily = raw.get("dailySleepDTO", {})
+        score_obj = daily.get("sleepScores", {})
+        sleep_score = score_obj.get("overall", {}).get("value") if isinstance(score_obj, dict) else None
+        qualifier = score_obj.get("overall", {}).get("qualifierKey") if isinstance(score_obj, dict) else None
+
+        duration = daily.get("sleepTimeSeconds")
+        deep = daily.get("deepSleepSeconds")
+        light = daily.get("lightSleepSeconds")
+        rem = daily.get("remSleepSeconds")
+        awake = daily.get("awakeSleepSeconds")
+
+        # Resting HR is avgHeartRate in the sleep DTO
+        resting_hr = int(daily.get("avgHeartRate") or 0) or None
+
+        # HRV — Garmin puts this in a separate key at the top level
+        hrv_val = (
+            raw.get("avgOvernightHrv")
+            or daily.get("avgOvernightHrv")
+            or raw.get("hrvValue")
+            or daily.get("hrvValue")
+        )
+
+        readiness, signal = _compute_readiness(sleep_score, hrv_val, resting_hr)
+
+        if existing:
+            existing.sleep_score = sleep_score
+            existing.sleep_score_qualifier = qualifier
+            existing.duration_seconds = duration
+            existing.deep_sleep_seconds = deep
+            existing.light_sleep_seconds = light
+            existing.rem_sleep_seconds = rem
+            existing.awake_seconds = awake
+            existing.hrv_nightly_avg = hrv_val
+            existing.resting_hr = resting_hr
+            existing.readiness_score = readiness
+            existing.readiness_signal = signal
+        else:
+            log = SleepLog(
+                athlete_id=athlete.id,
+                date=day,
+                sleep_score=sleep_score,
+                sleep_score_qualifier=qualifier,
+                duration_seconds=duration,
+                deep_sleep_seconds=deep,
+                light_sleep_seconds=light,
+                rem_sleep_seconds=rem,
+                awake_seconds=awake,
+                hrv_nightly_avg=hrv_val,
+                resting_hr=resting_hr,
+                readiness_score=readiness,
+                readiness_signal=signal,
+            )
+            db.add(log)
+            new_count += 1
+
+        logger.info(f"Sleep {date_str}: score={sleep_score}, HRV={hrv_val}, readiness={signal}")
+
+    return new_count
+
+
 def main():
     email = os.environ["GARMIN_EMAIL"]
     password = os.environ["GARMIN_PASSWORD"]
@@ -125,7 +238,10 @@ def main():
         from datetime import date, timedelta
         from_date = date.today() - timedelta(days=90)
         recompute_load(db, athlete, from_date, date.today())
-        logger.info(f"Sync complete — {new_count} new activities ingested, CTL/ATL/TSB rebuilt")
+
+        # Pull last 14 days of sleep data
+        sleep_count = ingest_sleep(athlete, db, garmin, days=14)
+        logger.info(f"Sync complete — {new_count} new activities, {sleep_count} sleep logs, CTL/ATL/TSB rebuilt")
 
 
 if __name__ == "__main__":

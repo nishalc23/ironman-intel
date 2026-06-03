@@ -15,28 +15,27 @@ const RISK_LABELS = {
   low: "Form: Good", moderate: "Accumulating Fatigue", high: "Overtraining Risk",
 };
 
-const REST_CARDIO = [
-  { key: "swim", label: "Swim", emoji: "🏊" },
-  { key: "bike", label: "Bike", emoji: "🚴" },
-  { key: "run",  label: "Run",  emoji: "🏃" },
-];
+// Fixed split pairings — Upper→Run, Lower→Bike, Rest→Swim
+const SPLITS = [
+  { key: "upper", emoji: "💪", label: "Upper",  sub: "chest · back · arms", cardio: "run",  cardioLabel: "+ Run 🏃" },
+  { key: "lower", emoji: "🦵", label: "Lower",  sub: "legs · glutes · core", cardio: "bike", cardioLabel: "+ Bike 🚴" },
+  { key: "rest",  emoji: "😴", label: "Rest",   sub: "no gym",               cardio: "swim", cardioLabel: "+ Swim 🏊" },
+] as const;
 
 export default function TrainingPlan({ riskLevel }: Props) {
   const [gymSplit, setGymSplit] = useState<"upper" | "lower" | "rest" | null>(null);
-  const [restCardio, setRestCardio] = useState<string | null>(null);
   const [plan, setPlan] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function generate(split: "upper" | "lower" | "rest", cardio?: string) {
+  async function generate(split: "upper" | "lower" | "rest") {
+    const pairing = SPLITS.find(s => s.key === split)!;
     setLoading(true);
     setPlan(null);
     setError(null);
     try {
       const hasGym = split !== "rest";
-      // Upper/Lower: no discipline passed — Claude picks based on urgency/frequency
-      // Rest: user's chosen discipline passed as light recovery session
-      const data = await api.getTodayPlan(hasGym, cardio ?? "", hasGym ? split : undefined);
+      const data = await api.getTodayPlan(hasGym, pairing.cardio, hasGym ? split : undefined);
       setPlan(data.plan);
     } catch {
       setError("Could not generate plan — make sure the API is running.");
@@ -47,21 +46,13 @@ export default function TrainingPlan({ riskLevel }: Props) {
 
   function handleSplitClick(s: "upper" | "lower" | "rest") {
     setGymSplit(s);
-    setRestCardio(null);
     setPlan(null);
     setError(null);
-    // Upper/Lower: generate immediately — Claude picks cardio
-    if (s !== "rest") generate(s);
-  }
-
-  function handleRestCardio(cardio: string) {
-    setRestCardio(cardio);
-    generate("rest", cardio);
+    generate(s);
   }
 
   function reset() {
     setGymSplit(null);
-    setRestCardio(null);
     setPlan(null);
     setError(null);
   }
@@ -78,13 +69,9 @@ export default function TrainingPlan({ riskLevel }: Props) {
         </span>
       </div>
 
-      {/* Step 1 — Gym split (always visible) */}
+      {/* Split buttons */}
       <div className="grid grid-cols-3 gap-3 mb-4">
-        {([
-          { key: "upper", emoji: "💪", label: "Upper", sub: "chest · back · arms" },
-          { key: "lower", emoji: "🦵", label: "Lower", sub: "legs · glutes · core" },
-          { key: "rest",  emoji: "😴", label: "Rest",  sub: "no gym" },
-        ] as const).map(s => (
+        {SPLITS.map(s => (
           <button
             key={s.key}
             onClick={() => handleSplitClick(s.key)}
@@ -97,29 +84,11 @@ export default function TrainingPlan({ riskLevel }: Props) {
           >
             <span className="text-xl">{s.emoji}</span>
             <span>{s.label}</span>
-            <span className="text-[10px] font-normal opacity-50">{s.sub}</span>
+            <span className="text-[10px] font-normal opacity-60">{s.sub}</span>
+            <span className="text-[10px] font-medium text-ironman-red">{s.cardioLabel}</span>
           </button>
         ))}
       </div>
-
-      {/* Step 2 — Rest day cardio picker */}
-      {gymSplit === "rest" && !loading && !plan && (
-        <div>
-          <p className="text-xs text-ironman-muted mb-2">What do you feel like doing?</p>
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {REST_CARDIO.map(c => (
-              <button
-                key={c.key}
-                onClick={() => handleRestCardio(c.key)}
-                className="flex flex-col items-center gap-1 py-3 rounded-xl border border-ironman-border bg-[#1A1A1A] text-ironman-muted text-xs font-medium hover:border-white/40 hover:text-white transition-all"
-              >
-                <span className="text-xl">{c.emoji}</span>
-                {c.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Loading */}
       {loading && (
@@ -148,7 +117,7 @@ export default function TrainingPlan({ riskLevel }: Props) {
           </div>
           <div className="mt-3 flex gap-3">
             <button
-              onClick={() => gymSplit && gymSplit !== "rest" ? generate(gymSplit) : restCardio && generate("rest", restCardio)}
+              onClick={() => gymSplit && generate(gymSplit)}
               className="text-xs text-ironman-muted hover:text-white transition-colors underline underline-offset-2"
             >
               Regenerate
@@ -165,7 +134,7 @@ export default function TrainingPlan({ riskLevel }: Props) {
 
       {!gymSplit && (
         <p className="text-ironman-muted text-xs text-center py-1">
-          Pick your gym split — Claude handles the rest.
+          Pick your day — cardio is already paired.
         </p>
       )}
     </div>

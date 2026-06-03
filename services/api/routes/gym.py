@@ -10,7 +10,7 @@ router = APIRouter()
 
 class SetIn(BaseModel):
     reps: int
-    weight_kg: float | None = None
+    weight_lbs: float | None = None
 
 
 class ExerciseIn(BaseModel):

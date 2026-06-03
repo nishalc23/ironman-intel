@@ -6,9 +6,9 @@ export default {
       colors: {
         ironman: {
           red: "#E8001C",
-          dark: "#0D0D0D",
-          card: "#1A1A1A",
-          border: "#2A2A2A",
+          dark: "#080810",
+          card: "#0E0E1A",
+          border: "#1A1A28",
           muted: "#6B7280",
         },
       },
