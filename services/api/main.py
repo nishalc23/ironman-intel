@@ -82,6 +82,10 @@ async def on_startup():
     asyncio.create_task(_sunday_midnight_scheduler())
 
 
+@app.get("/")
+def root():
+    return {"status": "ok", "app": "Ironman Intel API"}
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
