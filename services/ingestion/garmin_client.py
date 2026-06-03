@@ -1,3 +1,5 @@
+import os
+import json
 import logging
 from pathlib import Path
 from garminconnect import Garmin, GarminConnectAuthenticationError
@@ -37,6 +39,14 @@ class GarminClient:
     def _authenticate(self) -> Garmin:
         token_path = TOKEN_DIR / "session"
         token_path.mkdir(parents=True, exist_ok=True)
+
+        # If running on Render/cloud, seed tokens from env var
+        tokens_env = os.environ.get("garmin_tokens.json") or os.environ.get("GARMIN_TOKENS_JSON")
+        if tokens_env:
+            token_file = token_path / "garmin_tokens.json"
+            if not token_file.exists():
+                token_file.write_text(tokens_env)
+                logger.info("Seeded Garmin tokens from environment variable")
 
         client = Garmin(
             self.email,
