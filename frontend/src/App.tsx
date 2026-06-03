@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { api } from "./api/client";
+import { api, ApiNotReadyError } from "./api/client";
 import type { MetricsSummary, ActivityRecord, GymWorkout } from "./api/client";
 import WeekCalendar from "./components/WeekCalendar";
 import SleepCard from "./components/SleepCard";
@@ -95,8 +95,13 @@ export default function App() {
       setActivities(a);
       setGymWorkouts(g);
       setApiDown(false);
-    } catch {
-      setApiDown(true);
+    } catch (e) {
+      // 404 = API is up but no athlete synced yet — show "needs sync" not "offline"
+      if (e instanceof ApiNotReadyError) {
+        setApiDown(false);
+      } else {
+        setApiDown(true);
+      }
     }
   }, []);
 
@@ -161,7 +166,7 @@ export default function App() {
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-yellow-500/20 text-yellow-400 text-xs"
             style={{ background: "rgba(234,179,8,0.05)" }}>
             <span className="text-base">⚠</span>
-            <span>API offline — run <code className="mono bg-black/30 px-1 py-0.5 rounded">make api</code> to connect live data</span>
+            <span>No data yet — hit ⟳ Sync to pull your Garmin data</span>
           </div>
         )}
 

@@ -49,8 +49,12 @@ export interface GymWorkout {
   exercises: GymExercise[];
 }
 
+export class ApiNotReadyError extends Error {}
+
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
+  // 404 means API is up but no data yet — not the same as being offline
+  if (res.status === 404) throw new ApiNotReadyError("no data yet");
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return res.json();
 }
