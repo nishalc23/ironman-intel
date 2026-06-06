@@ -343,7 +343,7 @@ def generate_adaptive_weekly_plan(db: Session, athlete: Athlete, target_week_num
 
     # Call Claude — use Haiku for speed (smart enough for structured JSON plan)
     message = client.messages.create(
-        model="claude-haiku-4-5",
+        model="claude-3-5-haiku-20241022",
         max_tokens=4096,
         messages=[{"role": "user", "content": prompt}],
     )

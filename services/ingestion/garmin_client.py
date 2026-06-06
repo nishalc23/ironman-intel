@@ -40,13 +40,12 @@ class GarminClient:
         token_path = TOKEN_DIR / "session"
         token_path.mkdir(parents=True, exist_ok=True)
 
-        # If running on Render/cloud, seed tokens from env var
-        tokens_env = os.environ.get("garmin_tokens.json") or os.environ.get("GARMIN_TOKENS_JSON")
+        # If running on Render/cloud, seed tokens from env var (always overwrite to stay fresh)
+        tokens_env = os.environ.get("GARMIN_TOKENS_JSON") or os.environ.get("garmin_tokens.json")
         if tokens_env:
             token_file = token_path / "garmin_tokens.json"
-            if not token_file.exists():
-                token_file.write_text(tokens_env)
-                logger.info("Seeded Garmin tokens from environment variable")
+            token_file.write_text(tokens_env)
+            logger.info("Seeded Garmin tokens from environment variable")
 
         client = Garmin(
             self.email,

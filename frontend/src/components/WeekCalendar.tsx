@@ -303,7 +303,7 @@ export default function WeekCalendar() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
         {activeDays.map((day, i) => {
           const date = new Date(week.startDate.getTime() + i * 86400000);
-          return <DayColumn key={i} day={day} date={date} />;
+          return <DayColumn key={date.toISOString().split("T")[0]} day={day} date={date} />;
         })}
       </div>
 
