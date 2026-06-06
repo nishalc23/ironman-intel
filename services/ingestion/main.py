@@ -50,10 +50,9 @@ def parse_start_time(raw: dict) -> datetime | None:
     return None
 
 
-def ingest_activities(athlete: Athlete, db, garmin: GarminClient) -> int:
-    raw_activities = garmin.get_activities(limit=100)
+def _ingest_raw_activities(athlete: Athlete, db, raw_activities: list) -> int:
+    """Ingest a pre-fetched list of raw Garmin activity dicts."""
     new_count = 0
-
     for raw in raw_activities:
         garmin_id = str(raw.get("activityId", ""))
         if not garmin_id:
@@ -90,6 +89,12 @@ def ingest_activities(athlete: Athlete, db, garmin: GarminClient) -> int:
     return new_count
 
 
+def ingest_activities(athlete: Athlete, db, garmin: GarminClient) -> int:
+    """Fetch and ingest activities from Garmin."""
+    raw_activities = garmin.get_activities(limit=50)
+    return _ingest_raw_activities(athlete, db, raw_activities)
+
+
 def _compute_readiness(score: int | None, hrv: float | None, resting_hr: int | None) -> tuple[int, str]:
     """Compute a 0-100 readiness score and green/yellow/red signal."""
     points = 0
@@ -123,21 +128,32 @@ def _compute_readiness(score: int | None, hrv: float | None, resting_hr: int | N
     return readiness, signal
 
 
-def ingest_sleep(athlete: Athlete, db, garmin: GarminClient, days: int = 14) -> int:
+def ingest_sleep(athlete: Athlete, db, garmin: GarminClient, days: int = 7) -> int:
     """Pull last N days of sleep data from Garmin and store in sleep_logs."""
     from datetime import date, timedelta
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     new_count = 0
 
+    today = date.today()
+    dates_to_fetch = []
     for i in range(days):
-        day = date.today() - timedelta(days=i)
-        date_str = day.isoformat()
-
-        # Skip if already have today's data
+        day = today - timedelta(days=i)
         existing = db.query(SleepLog).filter_by(athlete_id=athlete.id, date=day).first()
         if existing and i > 1:  # always re-fetch yesterday and today
             continue
+        dates_to_fetch.append((i, day))
 
-        raw = garmin.get_sleep_data(date_str)
+    # Fetch all days in parallel (3 threads — Garmin rate limit safe)
+    def fetch_day(args):
+        i, day = args
+        return i, day, garmin.get_sleep_data(day.isoformat())
+
+    results = {}
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        for i, day, raw in pool.map(fetch_day, dates_to_fetch):
+            results[day] = (i, raw)
+
+    for day, (i, raw) in results.items():
         if not raw:
             continue
 
@@ -166,18 +182,19 @@ def ingest_sleep(athlete: Athlete, db, garmin: GarminClient, days: int = 14) -> 
 
         readiness, signal = _compute_readiness(sleep_score, hrv_val, resting_hr)
 
-        if existing:
-            existing.sleep_score = sleep_score
-            existing.sleep_score_qualifier = qualifier
-            existing.duration_seconds = duration
-            existing.deep_sleep_seconds = deep
-            existing.light_sleep_seconds = light
-            existing.rem_sleep_seconds = rem
-            existing.awake_seconds = awake
-            existing.hrv_nightly_avg = hrv_val
-            existing.resting_hr = resting_hr
-            existing.readiness_score = readiness
-            existing.readiness_signal = signal
+        existing_record = db.query(SleepLog).filter_by(athlete_id=athlete.id, date=day).first()
+        if existing_record:
+            existing_record.sleep_score = sleep_score
+            existing_record.sleep_score_qualifier = qualifier
+            existing_record.duration_seconds = duration
+            existing_record.deep_sleep_seconds = deep
+            existing_record.light_sleep_seconds = light
+            existing_record.rem_sleep_seconds = rem
+            existing_record.awake_seconds = awake
+            existing_record.hrv_nightly_avg = hrv_val
+            existing_record.resting_hr = resting_hr
+            existing_record.readiness_score = readiness
+            existing_record.readiness_signal = signal
         else:
             log = SleepLog(
                 athlete_id=athlete.id,
@@ -197,7 +214,7 @@ def ingest_sleep(athlete: Athlete, db, garmin: GarminClient, days: int = 14) -> 
             db.add(log)
             new_count += 1
 
-        logger.info(f"Sleep {date_str}: score={sleep_score}, HRV={hrv_val}, readiness={signal}")
+        logger.info(f"Sleep {day}: score={sleep_score}, HRV={hrv_val}, readiness={signal}")
 
     return new_count
 

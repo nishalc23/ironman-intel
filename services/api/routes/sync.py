@@ -9,7 +9,7 @@ sys.path.insert(0, "/app")
 from db.database import get_db
 from db.models import Athlete, Activity
 from services.ingestion.garmin_client import GarminClient
-from services.ingestion.main import get_or_create_athlete, ingest_activities, ingest_sleep
+from services.ingestion.main import get_or_create_athlete, ingest_activities, ingest_sleep, _ingest_raw_activities
 from compute.tss import estimate_activity_tss
 from compute.load import recompute_load
 
@@ -18,14 +18,23 @@ logger = logging.getLogger(__name__)
 
 
 def _run_sync():
+    import concurrent.futures
     email = os.environ["GARMIN_EMAIL"]
     password = os.environ["GARMIN_PASSWORD"]
 
     garmin = GarminClient(email, password)
 
+    # Fetch activities and sleep raw data in parallel
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        activities_future = pool.submit(garmin.get_activities, 50)  # last 50 is plenty
+        # Sleep fetching happens inside ingest_sleep with its own parallelism
+        raw_activities = activities_future.result()
+
     with get_db() as db:
         athlete = get_or_create_athlete(db, email)
-        new_count = ingest_activities(athlete, db, garmin)
+
+        # Ingest activities (uses already-fetched list)
+        new_count = _ingest_raw_activities(athlete, db, raw_activities)
 
         # Stamp TSS on any activity missing it
         untssed = (
@@ -48,8 +57,8 @@ def _run_sync():
         from_date = date.today() - timedelta(days=90)
         recompute_load(db, athlete_obj, from_date, date.today())
 
-        # Pull 14 days of sleep + HRV data
-        sleep_count = ingest_sleep(athlete_obj, db, garmin, days=14)
+        # Pull 7 days of sleep + HRV data (parallelized inside)
+        sleep_count = ingest_sleep(athlete_obj, db, garmin, days=7)
 
         logger.info(f"Sync complete — {new_count} new activities, {sleep_count} sleep logs, CTL/ATL/TSB rebuilt")
 
