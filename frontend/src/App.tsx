@@ -111,8 +111,17 @@ export default function App() {
     setSyncing(true);
     try {
       await api.triggerSync();
-      setTimeout(loadAll, 8000);
-    } finally {
+      // Poll every 5s for up to 60s — Garmin sync on Render takes 20-30s
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        await loadAll();
+        if (attempts >= 12) {
+          clearInterval(poll);
+          setSyncing(false);
+        }
+      }, 5000);
+    } catch {
       setSyncing(false);
     }
   }
