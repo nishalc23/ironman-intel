@@ -43,9 +43,22 @@ class GarminClient:
         # If running on Render/cloud, seed tokens from env var (always overwrite to stay fresh)
         tokens_env = os.environ.get("GARMIN_TOKENS_JSON") or os.environ.get("garmin_tokens.json")
         if tokens_env:
-            token_file = token_path / "garmin_tokens.json"
-            token_file.write_text(tokens_env)
-            logger.info("Seeded Garmin tokens from environment variable")
+            try:
+                combined = json.loads(tokens_env)
+                # garth's Client.dump()/load() expect two separate files:
+                # oauth1_token.json and oauth2_token.json, each holding the
+                # dataclass fields directly (not wrapped/combined).
+                oauth1 = combined.pop("oauth1_token.json", None)
+                oauth2 = combined  # whatever remains is the oauth2 token fields
+
+                if oauth1 is not None:
+                    (token_path / "oauth1_token.json").write_text(json.dumps(oauth1, indent=4))
+                if oauth2:
+                    (token_path / "oauth2_token.json").write_text(json.dumps(oauth2, indent=4))
+
+                logger.info("Seeded Garmin tokens from environment variable (split into oauth1/oauth2 files)")
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning("Failed to parse GARMIN_TOKENS_JSON env var as combined token JSON: %s", e)
 
         client = Garmin(
             self.email,
