@@ -1,24 +1,4 @@
-import { useEffect, useState } from "react";
-
-interface SleepEntry {
-  date: string;
-  sleep_score: number | null;
-  duration_hours: number | null;
-  hrv_nightly_avg: number | null;
-  resting_hr: number | null;
-  readiness_score: number | null;
-  readiness_signal: "green" | "yellow" | "red" | null;
-  deep_sleep_hours: number | null;
-  rem_sleep_hours: number | null;
-}
-
-interface SleepSummary {
-  today: SleepEntry | null;
-  last_7_days: SleepEntry[];
-  avg_score_7d: number | null;
-  avg_hrv_7d: number | null;
-  trend: "improving" | "stable" | "declining";
-}
+import type { SleepSummary } from "../api/client";
 
 const SIGNAL_CONFIG = {
   green:  { color: "#34D399", label: "Ready to train hard",   bg: "rgba(52,211,153,0.1)",  border: "rgba(52,211,153,0.25)" },
@@ -63,16 +43,8 @@ function MiniBar({ label, hours, maxHours, color }: { label: string; hours: numb
   );
 }
 
-export default function SleepCard() {
-  const [data, setData] = useState<SleepSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/sleep/")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
+export default function SleepCard({ data }: { data: SleepSummary | null }) {
+  const loading = data === null;
 
   if (loading) {
     return (

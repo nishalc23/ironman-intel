@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { api, ApiNotReadyError } from "./api/client";
-import type { MetricsSummary, ActivityRecord, GymWorkout } from "./api/client";
+import type { MetricsSummary, ActivityRecord, GymWorkout, SleepSummary } from "./api/client";
 import WeekCalendar from "./components/WeekCalendar";
 import SleepCard from "./components/SleepCard";
 import FitnessChart from "./components/FitnessChart";
@@ -81,19 +81,22 @@ export default function App() {
   const [metrics, setMetrics] = useState<MetricsSummary | null>(null);
   const [activities, setActivities] = useState<ActivityRecord[]>([]);
   const [gymWorkouts, setGymWorkouts] = useState<GymWorkout[]>([]);
+  const [sleep, setSleep] = useState<SleepSummary | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [apiDown, setApiDown] = useState(false);
 
   const loadAll = useCallback(async () => {
     try {
-      const [m, a, g] = await Promise.all([
+      const [m, a, g, s] = await Promise.all([
         api.getMetrics(),
         api.getActivities(),
         api.getGymWorkouts(),
+        api.getSleep(),
       ]);
       setMetrics(m);
       setActivities(a);
       setGymWorkouts(g);
+      setSleep(s);
       setApiDown(false);
     } catch (e) {
       // 404 = API is up but no athlete synced yet — show "needs sync" not "offline"
@@ -226,7 +229,7 @@ export default function App() {
 
         {/* ── SLEEP + ACTIVITY ─────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <SleepCard />
+          <SleepCard data={sleep} />
           <ActivityList activities={activities} />
         </div>
 

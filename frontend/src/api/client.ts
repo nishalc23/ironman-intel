@@ -83,9 +83,32 @@ export interface AdaptivePlan {
   generated_at: string;
 }
 
+export interface SleepEntry {
+  date: string;
+  sleep_score: number | null;
+  sleep_score_qualifier: string | null;
+  duration_hours: number | null;
+  deep_sleep_hours: number | null;
+  light_sleep_hours: number | null;
+  rem_sleep_hours: number | null;
+  hrv_nightly_avg: number | null;
+  resting_hr: number | null;
+  readiness_score: number | null;
+  readiness_signal: "green" | "yellow" | "red" | null;
+}
+
+export interface SleepSummary {
+  today: SleepEntry | null;
+  last_7_days: SleepEntry[];
+  avg_score_7d: number | null;
+  avg_hrv_7d: number | null;
+  trend: "improving" | "stable" | "declining";
+}
+
 export const api = {
   getMetrics: (days = 90) => get<MetricsSummary>(`/metrics/?days=${days}`),
   getActivities: (limit = 30) => get<ActivityRecord[]>(`/activities/?limit=${limit}`),
+  getSleep: () => get<SleepSummary>("/sleep/"),
   getTodayPlan: (gym: boolean, discipline: string, split?: string) =>
     get<{ plan: string }>(`/plan/today?gym=${gym}&discipline=${discipline}${split ? `&split=${split}` : ""}`),
   getSplit: () => get<{ split_day: string; allowed: string[] }>("/plan/split"),
