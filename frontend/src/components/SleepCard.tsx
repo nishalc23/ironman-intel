@@ -1,9 +1,11 @@
 import type { SleepSummary } from "../api/client";
 
+// Fallback labels only. The real headline comes from the API, which knows
+// which signal is limiting and says so.
 const SIGNAL_CONFIG = {
   green:  { color: "#34D399", label: "Ready to train hard",   bg: "rgba(52,211,153,0.1)",  border: "rgba(52,211,153,0.25)" },
-  yellow: { color: "#FBBF24", label: "Train moderate today",  bg: "rgba(251,191,36,0.1)",  border: "rgba(251,191,36,0.25)" },
-  red:    { color: "#F87171", label: "Easy or rest today",    bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.25)" },
+  yellow: { color: "#FBBF24", label: "Train, but keep it easy", bg: "rgba(251,191,36,0.1)",  border: "rgba(251,191,36,0.25)" },
+  red:    { color: "#F87171", label: "Recover today",         bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.25)" },
 };
 
 function ScoreRing({ score, color, size = 72 }: { score: number; color: string; size?: number }) {
@@ -68,7 +70,12 @@ export default function SleepCard({ data }: { data: SleepSummary | null }) {
   const today = data.today;
   const signal = today?.readiness_signal ?? "yellow";
   const cfg = SIGNAL_CONFIG[signal] ?? SIGNAL_CONFIG.yellow;
-  const score = today?.sleep_score ?? data.avg_score_7d ?? 0;
+  // The ring shows readiness, not the raw sleep score. Painting a sleep score
+  // of 68 in the readiness colour is what made a five hour night look green.
+  const sleepScore = today?.sleep_score ?? data.avg_score_7d ?? 0;
+  const readiness = today?.readiness_score ?? sleepScore;
+  const headline = today?.readiness_headline ?? cfg.label;
+  const hours = today?.duration_hours ?? null;
 
   const trendIcon = data.trend === "improving" ? "↑" : data.trend === "declining" ? "↓" : "→";
   const trendColor = data.trend === "improving" ? "#34D399" : data.trend === "declining" ? "#F87171" : "#6B7280";
@@ -86,13 +93,20 @@ export default function SleepCard({ data }: { data: SleepSummary | null }) {
       {/* Readiness signal + score ring */}
       <div className="flex items-center gap-4 px-3 py-3 rounded-xl border"
         style={{ background: cfg.bg, borderColor: cfg.border }}>
-        <ScoreRing score={Math.round(score)} color={cfg.color} />
+        <ScoreRing score={Math.round(readiness)} color={cfg.color} />
         <div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full" style={{ background: cfg.color, boxShadow: `0 0 6px ${cfg.color}` }} />
-            <p className="text-xs font-bold text-white">{cfg.label}</p>
+            <p className="text-xs font-bold text-white">{headline}</p>
           </div>
-          <p className="text-[11px] text-zinc-500 mt-1">Sleep score {Math.round(score)}/100</p>
+          <p className="text-[11px] text-zinc-500 mt-1">
+            Readiness {Math.round(readiness)}/100 · sleep score {Math.round(sleepScore)}
+            {hours != null && (
+              <span style={{ color: hours < 6 ? "#F87171" : undefined }}>
+                {" "}· {hours.toFixed(1)}h
+              </span>
+            )}
+          </p>
           <div className="flex gap-3 mt-1.5">
             {today?.hrv_nightly_avg && (
               <span className="text-[11px] mono text-zinc-400">HRV <span className="text-white font-bold">{Math.round(today.hrv_nightly_avg)}ms</span></span>

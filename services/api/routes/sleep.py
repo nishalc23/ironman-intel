@@ -21,7 +21,9 @@ class SleepEntry(BaseModel):
     hrv_nightly_avg: float | None
     resting_hr: int | None
     readiness_score: int | None
-    readiness_signal: str | None  # "green" | "yellow" | "red"
+    readiness_signal: str | None
+    readiness_headline: str | None = None
+    readiness_limiter: str | None = None
 
 
 class SleepSummary(BaseModel):
@@ -45,6 +47,8 @@ def _to_entry(log: SleepLog) -> SleepEntry:
         resting_hr=log.resting_hr,
         readiness_score=log.readiness_score,
         readiness_signal=log.readiness_signal,
+        readiness_headline=log.readiness_headline,
+        readiness_limiter=log.readiness_limiter,
     )
 
 

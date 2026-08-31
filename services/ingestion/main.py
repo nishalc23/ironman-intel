@@ -21,6 +21,7 @@ from db.sleep_model import SleepLog
 from services.ingestion.garmin_client import GarminClient
 from compute.tss import estimate_activity_tss
 from compute.load import recompute_from, earliest_uncounted_activity
+from compute.readiness import compute_readiness, rolling_baseline
 
 logging.basicConfig(
     level=logging.INFO,
@@ -105,37 +106,40 @@ def ingest_activities(athlete: Athlete, db, garmin: GarminClient):
     return _ingest_raw_activities(athlete, db, raw_activities)
 
 
-def _compute_readiness(score: int | None, hrv: float | None, resting_hr: int | None) -> tuple[int, str]:
-    """Compute a 0-100 readiness score and green/yellow/red signal."""
-    points = 0
-    count = 0
+def recompute_readiness(db, athlete_id: int, window: int = 14) -> int:
+    """
+    Rescore readiness for recent nights against a rolling baseline.
 
-    if score is not None:
-        points += score
-        count += 1
+    HRV and resting HR only mean something relative to an athlete's own normal,
+    so each night is compared with the nights before it. Runs after ingestion
+    because a night cannot be scored until its neighbours exist.
+    """
+    rows = (
+        db.query(SleepLog)
+        .filter(SleepLog.athlete_id == athlete_id)
+        .order_by(SleepLog.date)
+        .all()
+    )
 
-    if hrv is not None:
-        # HRV 60+ = excellent, 40-60 = good, 20-40 = fair, <20 = poor
-        hrv_score = min(100, int(hrv * 1.5))
-        points += hrv_score
-        count += 1
+    for i, row in enumerate(rows):
+        prior = rows[max(0, i - window):i + 1]
+        hrv_base = rolling_baseline([r.hrv_nightly_avg for r in prior])
+        rhr_base = rolling_baseline([float(r.resting_hr) if r.resting_hr else None for r in prior])
 
-    if resting_hr is not None:
-        # Lower resting HR = better recovered (45=100pts, 70=0pts)
-        hr_score = max(0, min(100, int((70 - resting_hr) * 4)))
-        points += hr_score
-        count += 1
+        result = compute_readiness(
+            sleep_score=row.sleep_score,
+            duration_hours=(row.duration_seconds / 3600) if row.duration_seconds else None,
+            hrv=row.hrv_nightly_avg,
+            resting_hr=row.resting_hr,
+            hrv_baseline=hrv_base,
+            rhr_baseline=rhr_base,
+        )
+        row.readiness_score = result.score
+        row.readiness_signal = result.signal
+        row.readiness_headline = result.headline
+        row.readiness_limiter = result.limiter
 
-    readiness = int(points / count) if count else 50
-
-    if readiness >= 70:
-        signal = "green"
-    elif readiness >= 45:
-        signal = "yellow"
-    else:
-        signal = "red"
-
-    return readiness, signal
+    return len(rows)
 
 
 def ingest_sleep(athlete: Athlete, db, garmin: GarminClient, days: int = 7) -> int:
@@ -190,8 +194,6 @@ def ingest_sleep(athlete: Athlete, db, garmin: GarminClient, days: int = 7) -> i
             or daily.get("hrvValue")
         )
 
-        readiness, signal = _compute_readiness(sleep_score, hrv_val, resting_hr)
-
         existing_record = db.query(SleepLog).filter_by(athlete_id=athlete.id, date=day).first()
         if existing_record:
             existing_record.sleep_score = sleep_score
@@ -203,8 +205,7 @@ def ingest_sleep(athlete: Athlete, db, garmin: GarminClient, days: int = 7) -> i
             existing_record.awake_seconds = awake
             existing_record.hrv_nightly_avg = hrv_val
             existing_record.resting_hr = resting_hr
-            existing_record.readiness_score = readiness
-            existing_record.readiness_signal = signal
+            # readiness is recomputed below, once every night is in place
         else:
             log = SleepLog(
                 athlete_id=athlete.id,
@@ -218,13 +219,16 @@ def ingest_sleep(athlete: Athlete, db, garmin: GarminClient, days: int = 7) -> i
                 awake_seconds=awake,
                 hrv_nightly_avg=hrv_val,
                 resting_hr=resting_hr,
-                readiness_score=readiness,
-                readiness_signal=signal,
             )
             db.add(log)
             new_count += 1
 
-        logger.info(f"Sleep {day}: score={sleep_score}, HRV={hrv_val}, readiness={signal}")
+        logger.info(f"Sleep {day}: score={sleep_score}, HRV={hrv_val}, {duration and round(duration/3600,1)}h")
+
+    # Readiness compares each night against the athlete's own baseline, so it
+    # can only be scored once the surrounding nights are in the database.
+    db.flush()
+    recompute_readiness(db, athlete.id)
 
     return new_count
 

@@ -35,6 +35,8 @@ class SleepLog(Base):
     # Computed readiness (0–100, derived from score + HRV trend)
     readiness_score = Column(Integer, nullable=True)
     readiness_signal = Column(String, nullable=True)       # "green" | "yellow" | "red"
+    readiness_headline = Column(String, nullable=True)     # what to actually do today
+    readiness_limiter = Column(String, nullable=True)      # weakest signal, or NULL if none
 
     created_at = Column(DateTime, default=datetime.utcnow)
 

@@ -135,6 +135,8 @@ export interface SleepEntry {
   resting_hr: number | null;
   readiness_score: number | null;
   readiness_signal: "green" | "yellow" | "red" | null;
+  readiness_headline: string | null;
+  readiness_limiter: string | null;
 }
 
 export interface SleepSummary {
