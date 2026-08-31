@@ -1,4 +1,4 @@
-.PHONY: up down api sync logs db-shell build frontend install
+.PHONY: up down api sync logs db-shell build frontend install test bench
 
 up:
 	docker compose up -d postgres redis
@@ -37,3 +37,9 @@ install:
 
 frontend:
 	cd frontend && PATH="/Users/nishalchintalapati/node/bin:$$PATH" npm run dev
+
+test:  ## Run the test suite (no Docker needed — uses in-memory SQLite)
+	.venv/bin/python -m pytest tests/ -q
+
+bench:  ## Measure recompute_load query count and wall time
+	.venv/bin/python bench/backfill.py

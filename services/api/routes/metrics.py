@@ -59,10 +59,12 @@ def get_metrics(days: int = 90):
         history = [
             DailyMetricsOut(
                 date=r.date,
-                ctl=r.ctl,
-                atl=r.atl,
-                tsb=r.tsb,
-                daily_tss=r.daily_tss or 0,
+                # Metrics are stored at full precision so incremental recomputes
+                # stay exact; round here so the dashboard stays readable.
+                ctl=round(r.ctl, 2) if r.ctl is not None else None,
+                atl=round(r.atl, 2) if r.atl is not None else None,
+                tsb=round(r.tsb, 2) if r.tsb is not None else None,
+                daily_tss=round(r.daily_tss or 0, 1),
                 swim_km=round((r.swim_volume_meters or 0) / 1000, 2),
                 bike_km=round((r.bike_volume_meters or 0) / 1000, 2),
                 run_km=round((r.run_volume_meters or 0) / 1000, 2),
