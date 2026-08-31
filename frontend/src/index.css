@@ -1,89 +1,202 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Glassmorphism design system.
+ *
+ * Glass is refraction, so it needs something worth refracting. On a flat black
+ * page a blurred panel is indistinguishable from a slightly lighter rectangle.
+ * The aurora layer below sits behind everything and gives every surface
+ * colour to pull through.
+ */
+
+:root {
+  /* Palette */
+  --bg:              #0F172A;
+  --bg-deep:         #080D1A;
+  --surface:         #1B2336;
+  --fg:              #F8FAFC;
+  --fg-muted:        #94A3B8;
+  --fg-dim:          #64748B;
+  --border:          #475569;
+  --accent:          #22C55E;
+  --accent-ink:      #0F172A;
+  --destructive:     #EF4444;
+
+  /* Discipline hues, kept vivid so they read through the glass */
+  --swim:            #22D3EE;
+  --bike:            #F59E0B;
+  --run:             #34D399;
+  --brick:           #A78BFA;
+  --rest:            #8B94A7;
+
+  /* Glass */
+  --blur:            16px;
+  --glass:           rgba(255, 255, 255, 0.06);
+  --glass-strong:    rgba(255, 255, 255, 0.10);
+  --glass-border:    rgba(255, 255, 255, 0.14);
+  --glass-highlight: rgba(255, 255, 255, 0.22);
+}
+
 * { box-sizing: border-box; }
 
+html, body, #root { min-height: 100%; }
+
 body {
-  background-color: #080810;
-  color: #E8EAF0;
-  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--bg-deep);
+  color: var(--fg);
+  font-family: 'Fira Sans', ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-.mono { font-family: 'JetBrains Mono', monospace; }
+.mono { font-family: 'Fira Code', ui-monospace, monospace; font-feature-settings: "tnum"; }
 
-/* Glass card */
+/* --- Ambient aurora ------------------------------------------------------
+   Three slow-drifting colour fields behind the whole app. This is what the
+   glass panels blur; without it the backdrop-filter has nothing to do. */
+
+.aurora {
+  position: fixed;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  filter: blur(80px) saturate(140%);
+  opacity: 0.75;
+}
+
+.aurora span {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+}
+
+.aurora .a1 {
+  width: 46vw; height: 46vw; top: -6%; left: -4%;
+  background: radial-gradient(circle, #0080FF 0%, transparent 68%);
+  animation: drift-a 26s ease-in-out infinite alternate;
+}
+.aurora .a2 {
+  width: 42vw; height: 42vw; top: 22%; right: -8%;
+  background: radial-gradient(circle, #8B00FF 0%, transparent 68%);
+  animation: drift-b 32s ease-in-out infinite alternate;
+}
+.aurora .a3 {
+  width: 40vw; height: 40vw; bottom: -10%; left: 26%;
+  background: radial-gradient(circle, #20B2AA 0%, transparent 68%);
+  animation: drift-c 38s ease-in-out infinite alternate;
+}
+
+@keyframes drift-a { to { transform: translate3d(9vw, 7vh, 0) scale(1.14); } }
+@keyframes drift-b { to { transform: translate3d(-11vw, 10vh, 0) scale(1.09); } }
+@keyframes drift-c { to { transform: translate3d(7vw, -9vh, 0) scale(1.16); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora span { animation: none; }
+}
+
+/* --- Glass surfaces ------------------------------------------------------ */
+
+.glass {
+  position: relative;
+  background: var(--glass);
+  backdrop-filter: blur(var(--blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.22),
+    0 18px 44px -24px rgba(0, 0, 0, 0.9);
+}
+
+/* A single specular streak across the top edge, the tell that sells glass. */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 45%;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,0.10), transparent);
+  pointer-events: none;
+}
+
+.glass-raised {
+  background: var(--glass-strong);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    0 24px 60px -28px rgba(0, 0, 0, 0.95);
+}
+
+/* Legacy alias. Several components were written against .card before the
+   glass system landed; keeping it pointed here migrates them for free. */
 .card {
   @apply relative rounded-2xl p-5;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(255,255,255,0.03);
-  backdrop-filter: blur(20px);
+  background: var(--glass);
+  backdrop-filter: blur(var(--blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.22),
+    0 18px 44px -24px rgba(0, 0, 0, 0.9);
 }
 
-/* Glow card */
-.card-glow {
-  @apply card;
-  box-shadow: 0 0 0 1px rgba(232,0,28,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+.card-glow { @apply card; }
+
+/* --- Rewarding interaction ----------------------------------------------
+   Completing a session should feel like something happened. */
+
+/* The tick itself: overshoot, then settle. */
+@keyframes stamp {
+  0%   { transform: scale(0.4) rotate(-14deg); opacity: 0; }
+  55%  { transform: scale(1.28) rotate(4deg);  opacity: 1; }
+  100% { transform: scale(1)    rotate(0deg);  opacity: 1; }
+}
+.stamp { animation: stamp 340ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* A ring of light thrown off the checkbox at the moment it is ticked. */
+@keyframes burst {
+  0%   { transform: scale(0.6); opacity: 0.85; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.burst { animation: burst 560ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* The whole chip lifts and settles when it lands. */
+@keyframes pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.pop { animation: pop 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* Fired when a discipline hits its weekly target. */
+@keyframes sweep {
+  0%   { transform: translateX(-120%); opacity: 0; }
+  35%  { opacity: 1; }
+  100% { transform: translateX(220%);  opacity: 0; }
+}
+.sweep { animation: sweep 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+/* The whole week done. */
+@keyframes triumph {
+  0%   { transform: scale(1);    filter: brightness(1); }
+  30%  { transform: scale(1.03); filter: brightness(1.35); }
+  100% { transform: scale(1);    filter: brightness(1); }
+}
+.triumph { animation: triumph 1100ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp, .burst, .pop, .sweep, .triumph { animation: none; }
 }
 
-/* Neon border pulse */
-@keyframes border-glow {
-  0%, 100% { box-shadow: 0 0 8px rgba(232,0,28,0.3), 0 0 20px rgba(232,0,28,0.1); }
-  50%       { box-shadow: 0 0 14px rgba(232,0,28,0.5), 0 0 35px rgba(232,0,28,0.2); }
-}
-.glow-pulse { animation: border-glow 3s ease-in-out infinite; }
+/* --- Misc ---------------------------------------------------------------- */
 
-/* Scanning line animation */
-@keyframes scan {
-  0%   { transform: translateY(-100%); opacity: 0; }
-  10%  { opacity: 1; }
-  90%  { opacity: 1; }
-  100% { transform: translateY(100vh); opacity: 0; }
-}
-
-/* Grid background */
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(232,0,28,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(232,0,28,0.04) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
-
-/* Data HUD bar */
-.hud-bar {
-  @apply relative overflow-hidden rounded-full;
-  height: 3px;
-  background: rgba(255,255,255,0.06);
-}
-.hud-bar-fill {
-  @apply absolute inset-y-0 left-0 rounded-full;
-  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Sport tag */
-.tag-swim   { @apply bg-cyan-500/15 border border-cyan-500/30 text-cyan-400; }
-.tag-bike   { @apply bg-emerald-500/15 border border-emerald-500/30 text-emerald-400; }
-.tag-run    { @apply bg-orange-500/15 border border-orange-500/30 text-orange-400; }
-.tag-gym    { @apply bg-violet-500/15 border border-violet-500/30 text-violet-400; }
-.tag-brick  { @apply bg-yellow-500/15 border border-yellow-500/30 text-yellow-400; }
-.tag-rest   { @apply bg-zinc-700/40 border border-zinc-600/30 text-zinc-500; }
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(232,0,28,0.3); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(232,0,28,0.6); }
+::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.28); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.5); }
 
-/* Number glitch animation */
-@keyframes flicker {
-  0%, 100% { opacity: 1; }
-  92% { opacity: 1; }
-  93% { opacity: 0.4; }
-  94% { opacity: 1; }
-  96% { opacity: 0.6; }
-  97% { opacity: 1; }
-}
-.flicker { animation: flicker 6s ease-in-out infinite; }
+:focus-visible { outline: none; }

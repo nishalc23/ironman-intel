@@ -36,11 +36,11 @@ function MiniBar({ label, hours, maxHours, color }: { label: string; hours: numb
   const pct = Math.min(100, (hours / maxHours) * 100);
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] text-zinc-600 w-10 shrink-0">{label}</span>
+      <span className="text-[10px] text-paper-dim w-10 shrink-0">{label}</span>
       <div className="flex-1 h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
         <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
       </div>
-      <span className="text-[11px] mono text-zinc-400 w-8 text-right">{hours}h</span>
+      <span className="text-[11px] mono text-paper-muted w-8 text-right">{hours}h</span>
     </div>
   );
 }
@@ -50,8 +50,7 @@ export default function SleepCard({ data }: { data: SleepSummary | null }) {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border p-5 flex items-center justify-center h-40"
-        style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
+      <div className="glass rounded-2xl p-5 flex items-center justify-center h-40">
         <div className="w-5 h-5 border-2 border-ironman-red border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -59,10 +58,9 @@ export default function SleepCard({ data }: { data: SleepSummary | null }) {
 
   if (!data?.today && !data?.last_7_days?.length) {
     return (
-      <div className="rounded-2xl border p-5 space-y-2"
-        style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
-        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Sleep & Readiness</p>
-        <p className="text-xs text-zinc-600">No sleep data yet — hit ⟳ Sync to pull from Garmin.</p>
+      <div className="glass rounded-2xl p-5 space-y-2">
+        <p className="text-xs font-semibold text-paper-muted uppercase tracking-wider">Sleep & Readiness</p>
+        <p className="text-xs text-paper-dim">No sleep data yet — hit ⟳ Sync to pull from Garmin.</p>
       </div>
     );
   }
@@ -81,12 +79,11 @@ export default function SleepCard({ data }: { data: SleepSummary | null }) {
   const trendColor = data.trend === "improving" ? "#34D399" : data.trend === "declining" ? "#F87171" : "#6B7280";
 
   return (
-    <div className="rounded-2xl border p-5 space-y-4"
-      style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
+    <div className="glass rounded-2xl p-5 space-y-4">
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Sleep & Readiness</p>
+        <p className="text-xs font-semibold text-paper-muted uppercase tracking-wider">Sleep & Readiness</p>
         <span className="text-[10px] mono" style={{ color: trendColor }}>{trendIcon} {data.trend}</span>
       </div>
 
@@ -97,9 +94,9 @@ export default function SleepCard({ data }: { data: SleepSummary | null }) {
         <div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full" style={{ background: cfg.color, boxShadow: `0 0 6px ${cfg.color}` }} />
-            <p className="text-xs font-bold text-white">{headline}</p>
+            <p className="text-xs font-bold text-paper">{headline}</p>
           </div>
-          <p className="text-[11px] text-zinc-500 mt-1">
+          <p className="text-[11px] text-paper-muted mt-1">
             Readiness {Math.round(readiness)}/100 · sleep score {Math.round(sleepScore)}
             {hours != null && (
               <span style={{ color: hours < 6 ? "#F87171" : undefined }}>
@@ -109,13 +106,13 @@ export default function SleepCard({ data }: { data: SleepSummary | null }) {
           </p>
           <div className="flex gap-3 mt-1.5">
             {today?.hrv_nightly_avg && (
-              <span className="text-[11px] mono text-zinc-400">HRV <span className="text-white font-bold">{Math.round(today.hrv_nightly_avg)}ms</span></span>
+              <span className="text-[11px] mono text-paper-muted">HRV <span className="text-paper font-bold">{Math.round(today.hrv_nightly_avg)}ms</span></span>
             )}
             {today?.resting_hr && (
-              <span className="text-[11px] mono text-zinc-400">RHR <span className="text-white font-bold">{today.resting_hr}bpm</span></span>
+              <span className="text-[11px] mono text-paper-muted">RHR <span className="text-paper font-bold">{today.resting_hr}bpm</span></span>
             )}
             {today?.duration_hours && (
-              <span className="text-[11px] mono text-zinc-400"><span className="text-white font-bold">{today.duration_hours}h</span> sleep</span>
+              <span className="text-[11px] mono text-paper-muted"><span className="text-paper font-bold">{today.duration_hours}h</span> sleep</span>
             )}
           </div>
         </div>
@@ -132,7 +129,7 @@ export default function SleepCard({ data }: { data: SleepSummary | null }) {
       {/* 7-day score strip */}
       {data.last_7_days.length > 1 && (
         <div>
-          <p className="text-[10px] text-zinc-600 uppercase tracking-wider mb-2">Last 7 nights</p>
+          <p className="text-[10px] text-paper-dim uppercase tracking-wider mb-2">Last 7 nights</p>
           <div className="flex gap-1 items-end h-10">
             {[...data.last_7_days].reverse().map((entry, i) => {
               const s = entry.sleep_score ?? 0;
@@ -153,9 +150,9 @@ export default function SleepCard({ data }: { data: SleepSummary | null }) {
       )}
 
       {/* Avg line */}
-      <div className="flex justify-between text-[10px] text-zinc-600">
-        <span>7-day avg score: <span className="text-zinc-400 font-medium">{data.avg_score_7d ?? "—"}</span></span>
-        {data.avg_hrv_7d && <span>avg HRV: <span className="text-zinc-400 font-medium">{data.avg_hrv_7d}ms</span></span>}
+      <div className="flex justify-between text-[10px] text-paper-dim">
+        <span>7-day avg score: <span className="text-paper-muted font-medium">{data.avg_score_7d ?? "—"}</span></span>
+        {data.avg_hrv_7d && <span>avg HRV: <span className="text-paper-muted font-medium">{data.avg_hrv_7d}ms</span></span>}
       </div>
     </div>
   );

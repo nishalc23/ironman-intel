@@ -34,25 +34,28 @@ export default function SignIn({ onSignedIn }: { onSignedIn: (name: string | nul
     }
   };
 
-  const field = "w-full px-3 py-2.5 rounded-xl text-sm text-zinc-200 placeholder-zinc-600 " +
-    "border border-white/10 focus:border-ironman-red/50 focus:outline-none transition-colors";
+  const field = "w-full px-3 py-2.5 rounded-xl text-sm text-paper placeholder-zinc-600 " +
+    "border border-white/10 focus:border-accent/60 focus:outline-none transition-colors";
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <div className="w-full max-w-sm">
+    <div className="relative min-h-screen flex items-center justify-center p-6">
+      <div className="aurora" aria-hidden>
+        <span className="a1" /><span className="a2" /><span className="a3" />
+      </div>
+      <div className="relative z-10 w-full max-w-sm">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-black tracking-tight text-zinc-100">
-            IRONMAN<span className="text-ironman-red">INTEL</span>
+            IRONMAN<span style={{ color: "#22C55E" }}>INTEL</span>
           </h1>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-600 mt-2">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-paper-dim mt-2">
             70.3 Training Analytics
           </p>
         </div>
 
         <form
           onSubmit={submit}
-          className="rounded-2xl border border-white/6 p-5 space-y-3"
-          style={{ background: "rgba(255,255,255,0.025)" }}
+          className="glass rounded-2xl p-5 space-y-3"
+          
         >
           <div className="flex gap-1 p-1 rounded-xl mb-1" style={{ background: "rgba(0,0,0,0.3)" }}>
             {(["login", "signup"] as const).map((m) => (
@@ -61,7 +64,7 @@ export default function SignIn({ onSignedIn }: { onSignedIn: (name: string | nul
                 type="button"
                 onClick={() => { setMode(m); setError(null); }}
                 className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all
-                  ${mode === m ? "text-zinc-100" : "text-zinc-600 hover:text-zinc-400"}`}
+                  ${mode === m ? "text-zinc-100" : "text-paper-dim hover:text-paper-muted"}`}
                 style={{ background: mode === m ? "rgba(255,255,255,0.07)" : "transparent" }}
               >
                 {m === "login" ? "Sign in" : "Create account"}
@@ -110,8 +113,8 @@ export default function SignIn({ onSignedIn }: { onSignedIn: (name: string | nul
             type="submit"
             disabled={busy}
             className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider
-              text-white transition-all disabled:opacity-50 hover:brightness-110"
-            style={{ background: "#E8001C" }}
+              text-paper transition-all disabled:opacity-50 hover:brightness-110"
+            style={{ background: "linear-gradient(135deg, #22C55E, #16A34A)", color: "#0F172A", boxShadow: "0 8px 24px -10px #22C55E" }}
           >
             {busy ? "…" : mode === "login" ? "Sign in" : "Create account"}
           </button>

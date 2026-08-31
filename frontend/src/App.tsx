@@ -18,17 +18,17 @@ function HUDStat({ label, value, sub, color, unit }: {
 }) {
   const display = value != null ? String(value) : "—";
   return (
-    <div className="relative flex flex-col gap-2 p-4 rounded-2xl border border-white/6 overflow-hidden"
-      style={{ background: "rgba(255,255,255,0.025)" }}>
+    <div className="glass relative flex flex-col gap-2 p-4 rounded-2xl overflow-hidden
+      motion-safe:transition-transform motion-safe:duration-300 hover:-translate-y-0.5">
       {/* Corner accent */}
       <div className={`absolute top-0 left-0 w-8 h-8 opacity-20`}
         style={{ background: `radial-gradient(circle at 0 0, ${color}, transparent 70%)` }} />
-      <span className="text-[10px] font-semibold tracking-widest uppercase text-zinc-500">{label}</span>
+      <span className="text-[10px] font-semibold tracking-widest uppercase text-paper-muted">{label}</span>
       <div className="flex items-end gap-1">
         <span className={`text-3xl font-black mono flicker`} style={{ color }}>{display}</span>
-        {unit && <span className="text-xs text-zinc-600 mb-1">{unit}</span>}
+        {unit && <span className="text-xs text-paper-dim mb-1">{unit}</span>}
       </div>
-      {sub && <span className="text-[11px] text-zinc-600 leading-tight">{sub}</span>}
+      {sub && <span className="text-[11px] text-paper-dim leading-tight">{sub}</span>}
       {/* Bottom glow line */}
       <div className="absolute bottom-0 left-0 right-0 h-px opacity-40"
         style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
@@ -41,18 +41,20 @@ function SyncButton({ syncing, onClick }: { syncing: boolean; onClick: () => voi
     <button
       onClick={onClick}
       disabled={syncing}
-      className="relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 border border-white/10 hover:border-ironman-red/50"
-      style={{ background: "rgba(255,255,255,0.04)" }}
+      className="relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border border-white/15
+        backdrop-blur-md motion-safe:transition-all disabled:opacity-50 hover:border-accent/60
+        motion-safe:hover:-translate-y-0.5 cursor-pointer"
+      style={{ background: "rgba(255,255,255,0.07)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18)" }}
     >
       {syncing ? (
         <>
-          <span className="w-3 h-3 border border-ironman-red border-t-transparent rounded-full animate-spin" />
-          <span className="text-zinc-400">Syncing…</span>
+          <span className="w-3 h-3 border border-accent border-t-transparent rounded-full animate-spin" />
+          <span className="text-paper-muted">Syncing…</span>
         </>
       ) : (
         <>
-          <span className="text-ironman-red text-base">⟳</span>
-          <span className="text-zinc-300 hidden sm:inline">Sync</span>
+          <span className="text-accent text-base">⟳</span>
+          <span className="text-paper hidden sm:inline">Sync</span>
         </>
       )}
     </button>
@@ -65,12 +67,12 @@ function RaceCountdown({ days }: { days: number }) {
       style={{ background: "rgba(232,0,28,0.06)" }}>
       <div className="flex flex-col items-center">
         <span className="text-2xl font-black mono text-ironman-red leading-none flicker">{days}</span>
-        <span className="text-[9px] tracking-widest text-zinc-500 uppercase">days</span>
+        <span className="text-[9px] tracking-widest text-paper-muted uppercase">days</span>
       </div>
       <div className="w-px h-8 bg-ironman-red/20" />
       <div className="flex flex-col">
-        <span className="text-[10px] font-semibold text-zinc-400">IRONMAN 70.3</span>
-        <span className="text-[10px] text-zinc-600">La Quinta · Dec 6, 2026</span>
+        <span className="text-[10px] font-semibold text-paper-muted">IRONMAN 70.3</span>
+        <span className="text-[10px] text-paper-dim">La Quinta · Dec 6, 2026</span>
       </div>
     </div>
   );
@@ -135,28 +137,31 @@ export default function App() {
     : { label: "Training load", color: "#A78BFA" };
 
   return (
-    <div className="min-h-screen grid-bg" style={{ background: "#080810" }}>
-      {/* Ambient top glow */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] opacity-10 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at top, #E8001C, transparent 70%)" }} />
+    <div className="relative min-h-screen">
+      {/* Ambient colour field. Glass has nothing to refract without it. */}
+      <div className="aurora" aria-hidden>
+        <span className="a1" /><span className="a2" /><span className="a3" />
+      </div>
+      <div className="relative z-10">
 
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/6 px-5 py-3 flex items-center justify-between"
-        style={{ background: "rgba(8,8,16,0.85)", backdropFilter: "blur(24px)" }}>
+      <header className="sticky top-0 z-50 border-b border-white/10 px-5 py-3 flex items-center justify-between
+          backdrop-blur-xl backdrop-saturate-150"
+        style={{ background: "rgba(15,23,42,0.55)", boxShadow: "inset 0 -1px 0 rgba(255,255,255,0.06)" }}>
         <div className="flex items-center gap-3">
           {/* Logo */}
           <div className="relative w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-sm shrink-0 overflow-hidden"
-            style={{ background: "linear-gradient(135deg, #E8001C, #9B000E)" }}>
+            style={{ background: "linear-gradient(135deg, #22C55E, #0080FF)", boxShadow: "0 6px 18px -8px #22C55E" }}>
             <span className="relative z-10">IM</span>
             <div className="absolute inset-0 opacity-30"
               style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.3), transparent)" }} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-sm font-bold text-white tracking-tight">Ironman Intel</h1>
-              <span className="hidden sm:block text-[10px] border border-ironman-red/30 text-ironman-red px-1.5 py-0.5 rounded mono">v2</span>
+              <h1 className="text-sm font-bold text-paper tracking-tight">Ironman Intel</h1>
+              <span className="hidden sm:block text-[10px] border border-accent/40 text-accent px-1.5 py-0.5 rounded mono">v2</span>
             </div>
-            <p className="text-[11px] text-zinc-600 mono">
+            <p className="text-[11px] text-paper-dim mono">
               {metrics?.athlete_name ?? "nishal"} · sub-5:00 target
             </p>
           </div>
@@ -220,6 +225,7 @@ export default function App() {
           <ActivityList activities={activities} />
         </div>
       </main>
+      </div>
     </div>
   );
 }
