@@ -17,6 +17,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from db.models import Base
 from db.weekly_plan_model import WeeklyAdaptivePlan  # noqa: F401 — registers model with Base
 from db.sleep_model import SleepLog                  # noqa: F401 — registers model with Base
+from db.session_completion_model import SessionCompletion  # noqa: F401 — registers model with Base
 
 log = logging.getLogger(__name__)
 

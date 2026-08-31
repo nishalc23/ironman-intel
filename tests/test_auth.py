@@ -205,3 +205,80 @@ class TestGarminCredentials:
         client.delete("/api/auth/garmin/connect", headers=auth(a["access_token"]))
         me = client.get("/api/auth/me", headers=auth(a["access_token"])).json()
         assert me["garmin_connected"] is False
+
+
+class TestWeeklyTemplate:
+    """The fixed weekly template and its server-side checkmarks."""
+
+    def test_template_matches_the_prescribed_volume(self, client):
+        from compute.weekly_template import counts_by_discipline, WEEKLY_TARGETS
+        assert counts_by_discipline() == WEEKLY_TARGETS
+
+    def test_session_keys_are_unique(self, client):
+        from compute.weekly_template import TEMPLATE
+        keys = [s.key for day in TEMPLATE.values() for s in day]
+        assert len(keys) == len(set(keys))
+
+    def test_week_returns_seven_days_starting_monday(self, client):
+        a = register(client, "week-shape@example.com")
+        w = client.get("/api/week/", headers=auth(a["access_token"])).json()
+        assert len(w["days"]) == 7
+        assert w["days"][0]["day_name"] == "Monday"
+        assert w["days"][6]["day_name"] == "Sunday"
+        assert w["progress"]["total"] == 12
+        assert w["progress"]["completed"] == 0
+
+    def test_checking_a_session_persists(self, client):
+        a = register(client, "week-check@example.com")
+        r = client.post("/api/week/complete/mon_swim_endurance", headers=auth(a["access_token"]))
+        assert r.status_code == 200
+        assert r.json()["progress"]["completed"] == 1
+
+        again = client.get("/api/week/", headers=auth(a["access_token"])).json()
+        session = again["days"][0]["sessions"][0]
+        assert session["key"] == "mon_swim_endurance"
+        assert session["completed"] is True
+        assert session["completed_at"] is not None
+
+    def test_checking_twice_does_not_double_count(self, client):
+        a = register(client, "week-double@example.com")
+        h = auth(a["access_token"])
+        client.post("/api/week/complete/tue_run_intervals", headers=h)
+        r = client.post("/api/week/complete/tue_run_intervals", headers=h)
+        assert r.json()["progress"]["completed"] == 1
+
+    def test_unchecking_removes_it(self, client):
+        a = register(client, "week-uncheck@example.com")
+        h = auth(a["access_token"])
+        client.post("/api/week/complete/sat_brick", headers=h)
+        r = client.delete("/api/week/complete/sat_brick", headers=h)
+        assert r.json()["progress"]["completed"] == 0
+
+    def test_unchecking_something_never_checked_is_not_an_error(self, client):
+        a = register(client, "week-noop@example.com")
+        r = client.delete("/api/week/complete/sun_rest", headers=auth(a["access_token"]))
+        assert r.status_code == 200
+
+    def test_unknown_session_key_is_rejected(self, client):
+        a = register(client, "week-bogus@example.com")
+        r = client.post("/api/week/complete/not_a_real_session", headers=auth(a["access_token"]))
+        assert r.status_code == 404
+
+    def test_checkmarks_are_scoped_per_athlete(self, client):
+        a = register(client, "week-iso-a@example.com")
+        b = register(client, "week-iso-b@example.com")
+        client.post("/api/week/complete/wed_swim_intervals", headers=auth(a["access_token"]))
+        seen_by_b = client.get("/api/week/", headers=auth(b["access_token"])).json()
+        assert seen_by_b["progress"]["completed"] == 0
+
+    def test_checkmarks_are_scoped_per_week(self, client):
+        from datetime import date, timedelta
+        a = register(client, "week-scope@example.com")
+        h = auth(a["access_token"])
+        client.post("/api/week/complete/fri_bike_intervals", headers=h)
+        last_week = (date.today() - timedelta(days=7)).isoformat()
+        prior = client.get(f"/api/week/?week_of={last_week}", headers=h).json()
+        assert prior["progress"]["completed"] == 0
+
+    def test_requires_authentication(self, client):
+        assert client.get("/api/week/").status_code == 401

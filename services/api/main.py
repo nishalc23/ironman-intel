@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from db.database import create_tables, get_db, check_connection
 from db.models import Athlete
-from services.api.routes import metrics, activities, plan, gym, sync, sleep, auth
+from services.api.routes import metrics, activities, plan, gym, sync, sleep, auth, week
 
 app = FastAPI(title="Ironman Intel API", version="1.0.0")
 
@@ -37,6 +37,7 @@ app.include_router(plan.router,       prefix="/api/plan",       tags=["plan"])
 app.include_router(gym.router,        prefix="/api/gym",        tags=["gym"])
 app.include_router(sync.router,       prefix="/api/sync",       tags=["sync"])
 app.include_router(sleep.router,      prefix="/api/sleep",      tags=["sleep"])
+app.include_router(week.router,       prefix="/api/week",       tags=["week"])
 
 
 async def _sunday_midnight_scheduler():
