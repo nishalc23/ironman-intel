@@ -1,85 +1,84 @@
 """
-The fixed weekly training template.
+The weekly training requirements.
 
-Eleven sessions across six training days plus one full rest day, repeating
-every week. Session keys are stable strings so completion records survive a
-template edit: renaming a label does not orphan a checkmark, but changing a
-key does, which is deliberate.
+A flat checklist, not a schedule. Sessions are not pinned to days, because the
+athlete decides when each one happens and ticks it off afterwards. What the
+week owes you is the count per discipline and intensity:
 
-Weekly volume:
     swim  2x   1 endurance, 1 intervals
     bike  4x   2 easy, 1 threshold, 1 intervals
     run   4x   2 easy, 1 threshold, 1 intervals
-    brick 1x   bike into run off the bike
+    brick 1x   bike into run
     rest  1x   one full day off
-"""
-from dataclasses import dataclass, asdict
-from datetime import date, timedelta
 
-DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+Weeks open Monday 00:00 and close Sunday 23:59. Completions are bucketed by
+the opening Monday, so a session ticked on Sunday night lands in the week that
+is about to close rather than the one starting the next morning.
+
+Completion keys are stable strings, so renaming a label keeps existing
+checkmarks while changing a key deliberately orphans them.
+"""
+from dataclasses import dataclass
+from datetime import date, timedelta
 
 
 @dataclass(frozen=True)
-class Session:
-    key: str          # stable identifier, used for completion records
+class Requirement:
+    key: str          # stable identifier used by completion records
     discipline: str   # swim | bike | run | brick | rest
     intensity: str    # endurance | easy | threshold | intervals | brick | rest
     label: str
 
-    def to_dict(self):
-        return asdict(self)
+
+# Order matters: this is the order they appear in the UI, hardest last within
+# each discipline so the easy volume reads first.
+REQUIREMENTS: list[Requirement] = [
+    Requirement("swim_endurance", "swim", "endurance", "Endurance"),
+    Requirement("swim_intervals", "swim", "intervals", "Intervals"),
+
+    Requirement("bike_easy_1", "bike", "easy", "Easy"),
+    Requirement("bike_easy_2", "bike", "easy", "Easy"),
+    Requirement("bike_threshold", "bike", "threshold", "Threshold"),
+    Requirement("bike_intervals", "bike", "intervals", "Intervals"),
+
+    Requirement("run_easy_1", "run", "easy", "Easy"),
+    Requirement("run_easy_2", "run", "easy", "Easy"),
+    Requirement("run_threshold", "run", "threshold", "Threshold"),
+    Requirement("run_intervals", "run", "intervals", "Intervals"),
+
+    Requirement("brick", "brick", "brick", "Bike into run"),
+
+    Requirement("rest", "rest", "rest", "Full day off"),
+]
+
+ALL_KEYS = {r.key for r in REQUIREMENTS}
+
+DISCIPLINE_ORDER = ["swim", "bike", "run", "brick", "rest"]
+
+# Sessions that count as training. Rest is a requirement you tick, but it is
+# not work, so it stays out of the training totals.
+TRAINING_KEYS = {r.key for r in REQUIREMENTS if r.discipline != "rest"}
 
 
-# Hard days are spaced so no two interval or threshold sessions in the same
-# discipline land back to back, and the brick sits the day before the rest day.
-TEMPLATE: dict[int, list[Session]] = {
-    0: [  # Monday
-        Session("mon_swim_endurance", "swim", "endurance", "Swim endurance"),
-        Session("mon_bike_easy", "bike", "easy", "Bike easy"),
-    ],
-    1: [  # Tuesday
-        Session("tue_run_intervals", "run", "intervals", "Run intervals"),
-        Session("tue_bike_easy", "bike", "easy", "Bike easy"),
-    ],
-    2: [  # Wednesday
-        Session("wed_swim_intervals", "swim", "intervals", "Swim intervals"),
-        Session("wed_run_easy", "run", "easy", "Run easy"),
-    ],
-    3: [  # Thursday
-        Session("thu_bike_threshold", "bike", "threshold", "Bike threshold"),
-        Session("thu_run_easy", "run", "easy", "Run easy"),
-    ],
-    4: [  # Friday
-        Session("fri_bike_intervals", "bike", "intervals", "Bike intervals"),
-        Session("fri_run_threshold", "run", "threshold", "Run threshold"),
-    ],
-    5: [  # Saturday
-        Session("sat_brick", "brick", "brick", "Brick: bike into run"),
-    ],
-    6: [  # Sunday
-        Session("sun_rest", "rest", "rest", "Full rest day"),
-    ],
-}
-
-ALL_KEYS = {s.key for day in TEMPLATE.values() for s in day}
-
-# What a complete week looks like, used to validate the template and to show
-# progress counts in the UI.
-WEEKLY_TARGETS = {"swim": 2, "bike": 4, "run": 4, "brick": 1, "rest": 1}
+def targets() -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for r in REQUIREMENTS:
+        counts[r.discipline] = counts.get(r.discipline, 0) + 1
+    return counts
 
 
 def week_start(on: date) -> date:
-    """The Monday of the week containing `on`. Weeks are Monday to Sunday."""
+    """The Monday on or before `on`. Python's weekday() is already Monday 0."""
     return on - timedelta(days=on.weekday())
 
 
-def sessions_for(day_index: int) -> list[Session]:
-    return TEMPLATE[day_index]
+def week_end(on: date) -> date:
+    """The Sunday that closes the week, six days after it opens."""
+    return week_start(on) + timedelta(days=6)
 
 
-def counts_by_discipline() -> dict[str, int]:
-    counts = {}
-    for day in TEMPLATE.values():
-        for s in day:
-            counts[s.discipline] = counts.get(s.discipline, 0) + 1
-    return counts
+def by_discipline() -> dict[str, list[Requirement]]:
+    grouped: dict[str, list[Requirement]] = {}
+    for r in REQUIREMENTS:
+        grouped.setdefault(r.discipline, []).append(r)
+    return grouped

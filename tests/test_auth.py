@@ -207,78 +207,107 @@ class TestGarminCredentials:
         assert me["garmin_connected"] is False
 
 
-class TestWeeklyTemplate:
-    """The fixed weekly template and its server-side checkmarks."""
+class TestWeeklyRequirements:
+    """A flat weekly checklist, Sunday to Saturday, not a day-by-day schedule."""
 
-    def test_template_matches_the_prescribed_volume(self, client):
-        from compute.weekly_template import counts_by_discipline, WEEKLY_TARGETS
-        assert counts_by_discipline() == WEEKLY_TARGETS
+    def test_volume_matches_the_prescription(self, client):
+        from compute.weekly_template import targets
+        assert targets() == {"swim": 2, "bike": 4, "run": 4, "brick": 1, "rest": 1}
 
-    def test_session_keys_are_unique(self, client):
-        from compute.weekly_template import TEMPLATE
-        keys = [s.key for day in TEMPLATE.values() for s in day]
+    def test_keys_are_unique(self, client):
+        from compute.weekly_template import REQUIREMENTS
+        keys = [r.key for r in REQUIREMENTS]
         assert len(keys) == len(set(keys))
 
-    def test_week_returns_seven_days_starting_monday(self, client):
-        a = register(client, "week-shape@example.com")
-        w = client.get("/api/week/", headers=auth(a["access_token"])).json()
-        assert len(w["days"]) == 7
-        assert w["days"][0]["day_name"] == "Monday"
-        assert w["days"][6]["day_name"] == "Sunday"
-        assert w["progress"]["total"] == 12
-        assert w["progress"]["completed"] == 0
-
-    def test_checking_a_session_persists(self, client):
-        a = register(client, "week-check@example.com")
-        r = client.post("/api/week/complete/mon_swim_endurance", headers=auth(a["access_token"]))
-        assert r.status_code == 200
-        assert r.json()["progress"]["completed"] == 1
-
-        again = client.get("/api/week/", headers=auth(a["access_token"])).json()
-        session = again["days"][0]["sessions"][0]
-        assert session["key"] == "mon_swim_endurance"
-        assert session["completed"] is True
-        assert session["completed_at"] is not None
-
-    def test_checking_twice_does_not_double_count(self, client):
-        a = register(client, "week-double@example.com")
-        h = auth(a["access_token"])
-        client.post("/api/week/complete/tue_run_intervals", headers=h)
-        r = client.post("/api/week/complete/tue_run_intervals", headers=h)
-        assert r.json()["progress"]["completed"] == 1
-
-    def test_unchecking_removes_it(self, client):
-        a = register(client, "week-uncheck@example.com")
-        h = auth(a["access_token"])
-        client.post("/api/week/complete/sat_brick", headers=h)
-        r = client.delete("/api/week/complete/sat_brick", headers=h)
-        assert r.json()["progress"]["completed"] == 0
-
-    def test_unchecking_something_never_checked_is_not_an_error(self, client):
-        a = register(client, "week-noop@example.com")
-        r = client.delete("/api/week/complete/sun_rest", headers=auth(a["access_token"]))
-        assert r.status_code == 200
-
-    def test_unknown_session_key_is_rejected(self, client):
-        a = register(client, "week-bogus@example.com")
-        r = client.post("/api/week/complete/not_a_real_session", headers=auth(a["access_token"]))
-        assert r.status_code == 404
-
-    def test_checkmarks_are_scoped_per_athlete(self, client):
-        a = register(client, "week-iso-a@example.com")
-        b = register(client, "week-iso-b@example.com")
-        client.post("/api/week/complete/wed_swim_intervals", headers=auth(a["access_token"]))
-        seen_by_b = client.get("/api/week/", headers=auth(b["access_token"])).json()
-        assert seen_by_b["progress"]["completed"] == 0
-
-    def test_checkmarks_are_scoped_per_week(self, client):
+    def test_weeks_run_monday_to_sunday(self, client):
         from datetime import date, timedelta
-        a = register(client, "week-scope@example.com")
+        from compute.weekly_template import week_start, week_end
+        anchor = date(2026, 8, 31)  # a Monday
+        assert anchor.weekday() == 0
+
+        # Every day Monday through Sunday resolves to the same Monday.
+        for offset in range(7):
+            assert week_start(anchor + timedelta(days=offset)) == anchor
+
+        # The week closes on Sunday, six days later.
+        assert week_end(anchor) == anchor + timedelta(days=6)
+        assert week_end(anchor).weekday() == 6
+
+        # The Sunday before belongs to the previous week, and the Monday after
+        # opens the next one, so consecutive weeks never overlap.
+        assert week_start(anchor - timedelta(days=1)) == anchor - timedelta(days=7)
+        assert week_start(anchor + timedelta(days=7)) == anchor + timedelta(days=7)
+
+    def test_week_is_grouped_by_discipline_not_by_day(self, client):
+        a = register(client, "req-shape@example.com")
+        w = client.get("/api/week/", headers=auth(a["access_token"])).json()
+        assert [g["discipline"] for g in w["groups"]] == ["swim", "bike", "run", "brick", "rest"]
+        assert w["progress"]["total"] == 12
+        assert w["progress"]["training_total"] == 11  # rest is not training
+        assert w["progress"]["training_completed"] == 0
+
+    def test_two_easy_bikes_are_independently_checkable(self, client):
+        a = register(client, "req-two-easy@example.com")
         h = auth(a["access_token"])
-        client.post("/api/week/complete/fri_bike_intervals", headers=h)
-        last_week = (date.today() - timedelta(days=7)).isoformat()
-        prior = client.get(f"/api/week/?week_of={last_week}", headers=h).json()
-        assert prior["progress"]["completed"] == 0
+        r = client.post("/api/week/complete/bike_easy_1", headers=h).json()
+        bike = next(g for g in r["groups"] if g["discipline"] == "bike")
+        assert bike["done"] == 1
+        r = client.post("/api/week/complete/bike_easy_2", headers=h).json()
+        bike = next(g for g in r["groups"] if g["discipline"] == "bike")
+        assert bike["done"] == 2
+
+    def test_rest_does_not_count_as_training(self, client):
+        a = register(client, "req-rest@example.com")
+        r = client.post("/api/week/complete/rest", headers=auth(a["access_token"])).json()
+        assert r["progress"]["completed"] == 1
+        assert r["progress"]["training_completed"] == 0
+
+    def test_ticking_persists(self, client):
+        a = register(client, "req-persist@example.com")
+        h = auth(a["access_token"])
+        client.post("/api/week/complete/swim_endurance", headers=h)
+        again = client.get("/api/week/", headers=h).json()
+        swim = next(g for g in again["groups"] if g["discipline"] == "swim")
+        done = next(r for r in swim["requirements"] if r["key"] == "swim_endurance")
+        assert done["completed"] is True
+        assert done["completed_at"] is not None
+
+    def test_ticking_twice_does_not_double_count(self, client):
+        a = register(client, "req-double@example.com")
+        h = auth(a["access_token"])
+        client.post("/api/week/complete/run_intervals", headers=h)
+        r = client.post("/api/week/complete/run_intervals", headers=h).json()
+        assert r["progress"]["training_completed"] == 1
+
+    def test_unticking_removes_it(self, client):
+        a = register(client, "req-untick@example.com")
+        h = auth(a["access_token"])
+        client.post("/api/week/complete/brick", headers=h)
+        r = client.delete("/api/week/complete/brick", headers=h).json()
+        assert r["progress"]["training_completed"] == 0
+
+    def test_unticking_something_never_ticked_is_not_an_error(self, client):
+        a = register(client, "req-noop@example.com")
+        assert client.delete("/api/week/complete/rest", headers=auth(a["access_token"])).status_code == 200
+
+    def test_unknown_key_is_rejected(self, client):
+        a = register(client, "req-bogus@example.com")
+        assert client.post("/api/week/complete/nope", headers=auth(a["access_token"])).status_code == 404
+
+    def test_scoped_per_athlete(self, client):
+        a = register(client, "req-iso-a@example.com")
+        b = register(client, "req-iso-b@example.com")
+        client.post("/api/week/complete/swim_intervals", headers=auth(a["access_token"]))
+        seen_by_b = client.get("/api/week/", headers=auth(b["access_token"])).json()
+        assert seen_by_b["progress"]["training_completed"] == 0
+
+    def test_scoped_per_week(self, client):
+        from datetime import date, timedelta
+        a = register(client, "req-week-scope@example.com")
+        h = auth(a["access_token"])
+        client.post("/api/week/complete/bike_intervals", headers=h)
+        prior = (date.today() - timedelta(days=7)).isoformat()
+        assert client.get(f"/api/week/?week_of={prior}", headers=h).json()["progress"]["training_completed"] == 0
 
     def test_requires_authentication(self, client):
         assert client.get("/api/week/").status_code == 401

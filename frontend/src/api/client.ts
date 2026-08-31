@@ -50,23 +50,63 @@ export interface GymWorkout {
 }
 
 export class ApiNotReadyError extends Error {}
+export class UnauthorizedError extends Error {}
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`);
+const TOKEN_KEY = "ironman_token";
+
+export const token = {
+  get: () => localStorage.getItem(TOKEN_KEY),
+  set: (t: string) => localStorage.setItem(TOKEN_KEY, t),
+  clear: () => localStorage.removeItem(TOKEN_KEY),
+};
+
+function authHeaders(): Record<string, string> {
+  const t = token.get();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
+async function handle<T>(res: Response): Promise<T> {
+  // A 401 means the token is missing, forged, or expired. Drop it so the app
+  // falls back to the sign-in screen instead of retrying forever.
+  if (res.status === 401) {
+    token.clear();
+    throw new UnauthorizedError("sign in again");
+  }
   // 404 means API is up but no data yet — not the same as being offline
   if (res.status === 404) throw new ApiNotReadyError("no data yet");
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    // Surface the server's reason. A bare status code tells the user nothing
+    // about which field they got wrong.
+    const detail = await res.json().catch(() => null);
+    const message =
+      typeof detail?.detail === "string"
+        ? detail.detail
+        : Array.isArray(detail?.detail)
+        ? detail.detail.map((d: { msg?: string }) => d.msg).filter(Boolean).join("; ")
+        : `${res.status} ${res.statusText}`;
+    throw new Error(message);
+  }
+  if (res.status === 204) return undefined as T;
   return res.json();
 }
 
+async function get<T>(path: string): Promise<T> {
+  return handle<T>(await fetch(`${BASE}${path}`, { headers: authHeaders() }));
+}
+
 async function post<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  return handle<T>(await fetch(`${BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  return res.json();
+  }));
+}
+
+async function del<T>(path: string): Promise<T> {
+  return handle<T>(await fetch(`${BASE}${path}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  }));
 }
 
 export interface AdaptivePlan {
@@ -105,7 +145,60 @@ export interface SleepSummary {
   trend: "improving" | "stable" | "declining";
 }
 
+export interface Requirement {
+  key: string;
+  discipline: "swim" | "bike" | "run" | "brick" | "rest";
+  intensity: "endurance" | "easy" | "threshold" | "intervals" | "brick" | "rest";
+  label: string;
+  completed: boolean;
+  completed_at: string | null;
+}
+
+export interface WeekGroup {
+  discipline: Requirement["discipline"];
+  done: number;
+  target: number;
+  requirements: Requirement[];
+}
+
+export interface WeekProgress {
+  completed: number;
+  total: number;
+  training_completed: number;
+  training_total: number;
+  by_discipline: Record<string, number>;
+  targets: Record<string, number>;
+}
+
+export interface WeekPlan {
+  week_start: string;
+  week_end: string;
+  groups: WeekGroup[];
+  progress: WeekProgress;
+}
+
+export interface AuthResult {
+  access_token: string;
+  token_type: string;
+  athlete_id: number;
+  display_name: string | null;
+}
+
+export const auth = {
+  signup: (email: string, password: string, display_name?: string) =>
+    post<AuthResult>("/auth/signup", { email, password, display_name }),
+  login: (email: string, password: string) =>
+    post<AuthResult>("/auth/login", { email, password }),
+  me: () => get<{ id: number; email: string; display_name: string | null; garmin_connected: boolean }>("/auth/me"),
+};
+
 export const api = {
+  getWeek: (weekOf?: string) =>
+    get<WeekPlan>(`/week/${weekOf ? `?week_of=${weekOf}` : ""}`),
+  completeSession: (key: string, weekOf?: string) =>
+    post<WeekPlan>(`/week/complete/${key}${weekOf ? `?week_of=${weekOf}` : ""}`, {}),
+  uncompleteSession: (key: string, weekOf?: string) =>
+    del<WeekPlan>(`/week/complete/${key}${weekOf ? `?week_of=${weekOf}` : ""}`),
   getMetrics: (days = 90) => get<MetricsSummary>(`/metrics/?days=${days}`),
   getActivities: (limit = 30) => get<ActivityRecord[]>(`/activities/?limit=${limit}`),
   getSleep: () => get<SleepSummary>("/sleep/"),

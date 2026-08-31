@@ -1,11 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { api, ApiNotReadyError } from "./api/client";
-import type { MetricsSummary, ActivityRecord, GymWorkout, SleepSummary } from "./api/client";
-import WeekCalendar from "./components/WeekCalendar";
+import type { MetricsSummary, ActivityRecord, SleepSummary } from "./api/client";
+import WeeklyChart from "./components/WeeklyChart";
 import SleepCard from "./components/SleepCard";
 import FitnessChart from "./components/FitnessChart";
 import ActivityList from "./components/ActivityList";
-import GymLog from "./components/GymLog";
 import { RACE_DATE } from "./data/plan";
 
 function daysUntilRace() {
@@ -80,22 +79,19 @@ function RaceCountdown({ days }: { days: number }) {
 export default function App() {
   const [metrics, setMetrics] = useState<MetricsSummary | null>(null);
   const [activities, setActivities] = useState<ActivityRecord[]>([]);
-  const [gymWorkouts, setGymWorkouts] = useState<GymWorkout[]>([]);
   const [sleep, setSleep] = useState<SleepSummary | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [apiDown, setApiDown] = useState(false);
 
   const loadAll = useCallback(async () => {
     try {
-      const [m, a, g, s] = await Promise.all([
+      const [m, a, s] = await Promise.all([
         api.getMetrics(),
         api.getActivities(),
-        api.getGymWorkouts(),
         api.getSleep(),
       ]);
       setMetrics(m);
       setActivities(a);
-      setGymWorkouts(g);
       setSleep(s);
       setApiDown(false);
     } catch (e) {
@@ -172,6 +168,7 @@ export default function App() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        <WeeklyChart />
 
         {/* API down banner */}
         {apiDown && (
@@ -217,24 +214,11 @@ export default function App() {
           </div>
         </div>
 
-        {/* ── DIVIDER ──────────────────────────────────────────── */}
-        <div className="flex items-center gap-4">
-          <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(232,0,28,0.3), transparent)" }} />
-          <span className="text-[10px] tracking-widest text-zinc-600 uppercase mono">26-week plan</span>
-          <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(232,0,28,0.3), transparent)" }} />
-        </div>
-
-        {/* ── WEEK CALENDAR ────────────────────────────────────── */}
-        <WeekCalendar />
-
         {/* ── SLEEP + ACTIVITY ─────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <SleepCard data={sleep} />
           <ActivityList activities={activities} />
         </div>
-
-        {/* ── GYM LOG ──────────────────────────────────────────── */}
-        <GymLog recentWorkouts={gymWorkouts} onSaved={loadAll} />
       </main>
     </div>
   );
