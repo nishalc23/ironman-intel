@@ -171,3 +171,44 @@ def recompute_load(db: Session, athlete: Athlete, from_date: date, to_date: date
         db.bulk_update_mappings(DailyMetrics, updates)
     if inserts:
         db.bulk_insert_mappings(DailyMetrics, inserts)
+
+
+def recompute_from(db: Session, athlete: Athlete, earliest_affected: date,
+                   through: date | None = None) -> int:
+    """
+    Cascade recomputation forward from the earliest event date that changed.
+
+    Garmin uploads are ordered by when they sync, not by when the workout
+    happened. A ride that lands three days late invalidates CTL and ATL for its
+    own date and every day after it, because the EMA at day N depends on day
+    N-1. Recomputing only recent days leaves that gap silently wrong, and
+    recomputing a fixed 90 day window misses anything older than 90 days.
+
+    Returns the number of days recomputed.
+    """
+    through = through or date.today()
+    if earliest_affected > through:
+        return 0
+    recompute_load(db, athlete, earliest_affected, through)
+    return (through - earliest_affected).days + 1
+
+
+def earliest_uncounted_activity(db: Session, athlete_id: int) -> date | None:
+    """
+    The event date of the oldest activity whose day has no DailyMetrics row.
+
+    Used after ingestion to find where history diverged, so a backdated upload
+    is caught even when the caller does not know which dates it touched.
+    """
+    counted = {
+        d for (d,) in db.query(DailyMetrics.date)
+        .filter(DailyMetrics.athlete_id == athlete_id)
+    }
+    dates = sorted({
+        start.date() for (start,) in db.query(Activity.start_time)
+        .filter(Activity.athlete_id == athlete_id)
+    })
+    for d in dates:
+        if d not in counted:
+            return d
+    return None

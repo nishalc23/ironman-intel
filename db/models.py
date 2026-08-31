@@ -21,6 +21,15 @@ class Athlete(Base):
     threshold_pace_per_km = Column(Float, nullable=True)  # running threshold pace
     threshold_css_per_100m = Column(Float, nullable=True) # swim critical swim speed
     gym_split = Column(String, nullable=True)        # "upper_lower" | "ppl" | "arnold"
+
+    # Auth. password_hash is bcrypt; there is no plaintext anywhere.
+    password_hash = Column(String, nullable=True)
+
+    # Garmin credentials, encrypted at rest with Fernet keyed by GARMIN_ENC_KEY.
+    # Each athlete connects their own account, so these are per-row, never env vars.
+    garmin_token_encrypted = Column(String, nullable=True)
+    garmin_connected_at = Column(DateTime, nullable=True)
+
     created_at = Column(DateTime, default=datetime.utcnow)
 
     activities = relationship("Activity", back_populates="athlete", cascade="all, delete-orphan")

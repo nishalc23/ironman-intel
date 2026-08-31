@@ -20,7 +20,7 @@ from db.models import Athlete, Activity
 from db.sleep_model import SleepLog
 from services.ingestion.garmin_client import GarminClient
 from compute.tss import estimate_activity_tss
-from compute.load import recompute_load
+from compute.load import recompute_from, earliest_uncounted_activity
 
 logging.basicConfig(
     level=logging.INFO,
@@ -50,9 +50,16 @@ def parse_start_time(raw: dict) -> datetime | None:
     return None
 
 
-def _ingest_raw_activities(athlete: Athlete, db, raw_activities: list) -> int:
-    """Ingest a pre-fetched list of raw Garmin activity dicts."""
+def _ingest_raw_activities(athlete: Athlete, db, raw_activities: list):
+    """
+    Ingest a pre-fetched list of raw Garmin activity dicts.
+
+    Returns (new_count, earliest_event_date). The second value is what makes
+    late arrivals correct: it is the oldest workout date this sync touched,
+    which is where recomputation has to restart from.
+    """
     new_count = 0
+    earliest = None
     for raw in raw_activities:
         garmin_id = str(raw.get("activityId", ""))
         if not garmin_id:
@@ -84,13 +91,16 @@ def _ingest_raw_activities(athlete: Athlete, db, raw_activities: list) -> int:
         )
         db.add(activity)
         new_count += 1
-        logger.info(f"Ingested {discipline} activity {garmin_id} on {start_time.date()}")
+        event_date = start_time.date()
+        if earliest is None or event_date < earliest:
+            earliest = event_date
+        logger.info(f"Ingested {discipline} activity {garmin_id} on {event_date}")
 
-    return new_count
+    return new_count, earliest
 
 
-def ingest_activities(athlete: Athlete, db, garmin: GarminClient) -> int:
-    """Fetch and ingest activities from Garmin."""
+def ingest_activities(athlete: Athlete, db, garmin: GarminClient):
+    """Fetch and ingest activities from Garmin. Returns (new_count, earliest_date)."""
     raw_activities = garmin.get_activities(limit=50)
     return _ingest_raw_activities(athlete, db, raw_activities)
 
@@ -231,7 +241,7 @@ def main():
 
     with get_db() as db:
         athlete = get_or_create_athlete(db, email)
-        new_count = ingest_activities(athlete, db, garmin)
+        new_count, earliest_new = ingest_activities(athlete, db, garmin)
 
         # Stamp TSS on any activity missing it
         untssed = (
@@ -253,8 +263,13 @@ def main():
 
         # Rebuild CTL/ATL/TSB from scratch (last 90 days)
         from datetime import date, timedelta
-        from_date = date.today() - timedelta(days=90)
-        recompute_load(db, athlete, from_date, date.today())
+        # Cascade from the oldest workout this sync touched, not a fixed window.
+        # A backdated upload invalidates its own day and every day after it,
+        # and a fixed 90 day window silently misses anything older.
+        candidates = [d for d in (earliest_new, earliest_uncounted_activity(db, athlete.id)) if d]
+        cascade_from = min(candidates) if candidates else date.today() - timedelta(days=90)
+        days = recompute_from(db, athlete, cascade_from)
+        logger.info(f"Recomputed {days} days of training load from {cascade_from}")
 
         # Pull last 14 days of sleep data
         sleep_count = ingest_sleep(athlete, db, garmin, days=14)

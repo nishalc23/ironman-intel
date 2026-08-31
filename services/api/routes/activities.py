@@ -1,8 +1,9 @@
 from datetime import datetime
-from fastapi import APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException
 from pydantic import BaseModel
 
 from db.database import get_db
+from services.api.auth import current_athlete_id, load_athlete
 from db.models import Athlete, Activity
 
 router = APIRouter()
@@ -24,11 +25,9 @@ class ActivityOut(BaseModel):
 
 
 @router.get("/", response_model=list[ActivityOut])
-def list_activities(limit: int = 50, offset: int = 0):
+def list_activities(limit: int = 50, offset: int = 0, athlete_id: int = Depends(current_athlete_id)):
     with get_db() as db:
-        athlete = db.query(Athlete).first()
-        if not athlete:
-            raise HTTPException(404, "No athlete found — run the sync first")
+        athlete = load_athlete(db, athlete_id)
 
         rows = (
             db.query(Activity)

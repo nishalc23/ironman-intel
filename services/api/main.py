@@ -11,9 +11,9 @@ load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from db.database import create_tables, get_db
+from db.database import create_tables, get_db, check_connection
 from db.models import Athlete
-from services.api.routes import metrics, activities, plan, gym, sync, sleep
+from services.api.routes import metrics, activities, plan, gym, sync, sleep, auth
 
 app = FastAPI(title="Ironman Intel API", version="1.0.0")
 
@@ -30,6 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router,       prefix="/api/auth",       tags=["auth"])
 app.include_router(metrics.router,    prefix="/api/metrics",    tags=["metrics"])
 app.include_router(activities.router, prefix="/api/activities", tags=["activities"])
 app.include_router(plan.router,       prefix="/api/plan",       tags=["plan"])
@@ -77,8 +78,18 @@ async def _sunday_midnight_scheduler():
 
 @app.on_event("startup")
 async def on_startup():
-    create_tables()
-    # Launch Sunday midnight scheduler as background task
+    """
+    Never raise here. A failure in startup kills the process, and Render then
+    restarts it in a loop where nothing answers, including /health. Log the
+    problem and come up degraded so the failure is visible.
+    """
+    import logging
+    log = logging.getLogger("startup")
+    try:
+        create_tables()
+    except Exception as e:
+        log.error(f"Database unavailable at startup, serving degraded: {e}")
+        return
     asyncio.create_task(_sunday_midnight_scheduler())
 
 
@@ -88,4 +99,6 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    """Reports degraded rather than failing, so a dead database is diagnosable."""
+    ok, error = check_connection()
+    return {"status": "ok" if ok else "degraded", "database": ok, "error": error}

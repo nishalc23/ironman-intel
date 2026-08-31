@@ -11,7 +11,9 @@ from db.models import Athlete, Activity
 from services.ingestion.garmin_client import GarminClient
 from services.ingestion.main import get_or_create_athlete, ingest_activities, ingest_sleep, _ingest_raw_activities
 from compute.tss import estimate_activity_tss
-from compute.load import recompute_load
+from compute.load import recompute_from, earliest_uncounted_activity
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -34,7 +36,7 @@ def _run_sync():
         athlete = get_or_create_athlete(db, email)
 
         # Ingest activities (uses already-fetched list)
-        new_count = _ingest_raw_activities(athlete, db, raw_activities)
+        new_count, earliest_new = _ingest_raw_activities(athlete, db, raw_activities)
 
         # Stamp TSS on any activity missing it
         untssed = (
@@ -53,9 +55,13 @@ def _run_sync():
                 threshold_hr=None,
             )
 
-        # Rebuild CTL/ATL/TSB for the last 90 days
-        from_date = date.today() - timedelta(days=90)
-        recompute_load(db, athlete_obj, from_date, date.today())
+        # Cascade from the oldest workout this sync touched, not a fixed window.
+        # A backdated upload invalidates its own day and every day after it,
+        # and a fixed 90 day window silently misses anything older.
+        candidates = [d for d in (earliest_new, earliest_uncounted_activity(db, athlete_obj.id)) if d]
+        cascade_from = min(candidates) if candidates else date.today() - timedelta(days=90)
+        days = recompute_from(db, athlete_obj, cascade_from)
+        log.info(f"Recomputed {days} days of training load from {cascade_from}")
 
         # Pull 7 days of sleep + HRV data (parallelized inside)
         sleep_count = ingest_sleep(athlete_obj, db, garmin, days=7)

@@ -1,8 +1,9 @@
 from datetime import date
-from fastapi import APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException
 from pydantic import BaseModel
 
 from db.database import get_db
+from services.api.auth import current_athlete_id, load_athlete
 from db.models import Athlete, GymWorkout
 
 router = APIRouter()
@@ -46,11 +47,9 @@ def _serialize(w: GymWorkout) -> GymWorkoutOut:
 
 
 @router.post("/", response_model=GymWorkoutOut)
-def log_gym_workout(payload: GymWorkoutIn):
+def log_gym_workout(payload: GymWorkoutIn, athlete_id: int = Depends(current_athlete_id)):
     with get_db() as db:
-        athlete = db.query(Athlete).first()
-        if not athlete:
-            raise HTTPException(404, "No athlete found — run the sync first")
+        athlete = load_athlete(db, athlete_id)
 
         workout = GymWorkout(
             athlete_id=athlete.id,
@@ -65,13 +64,11 @@ def log_gym_workout(payload: GymWorkoutIn):
 
 
 @router.get("/exercises", response_model=list[str])
-def list_exercises():
+def list_exercises(athlete_id: int = Depends(current_athlete_id)):
     """Return all unique exercise names from history, sorted alphabetically."""
     CARDIO = {"treadmill", "swimming", "stair machine", "bike", "elliptical", "rower"}
     with get_db() as db:
-        athlete = db.query(Athlete).first()
-        if not athlete:
-            return []
+        athlete = load_athlete(db, athlete_id)
         workouts = db.query(GymWorkout).filter_by(athlete_id=athlete.id).all()
         names: set[str] = set()
         for w in workouts:
@@ -83,11 +80,9 @@ def list_exercises():
 
 
 @router.get("/", response_model=list[GymWorkoutOut])
-def list_gym_workouts(limit: int = 30):
+def list_gym_workouts(limit: int = 30, athlete_id: int = Depends(current_athlete_id)):
     with get_db() as db:
-        athlete = db.query(Athlete).first()
-        if not athlete:
-            raise HTTPException(404, "No athlete found — run the sync first")
+        athlete = load_athlete(db, athlete_id)
 
         rows = (
             db.query(GymWorkout)

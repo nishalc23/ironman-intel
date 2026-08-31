@@ -213,3 +213,102 @@ class TestLateArrivingActivity:
         correct = metrics(db, athlete, end).ctl
 
         assert naive != pytest.approx(correct), "naive recompute should be detectably wrong"
+
+
+class TestCascadeFromChange:
+    """
+    recompute_from is what makes late arrivals correct. The old sync path
+    recomputed a fixed 90 day window from today, which both did unnecessary
+    work and silently missed any upload older than 90 days.
+    """
+
+    def test_cascade_covers_every_day_from_the_change_forward(self, db, athlete, add_activity):
+        from compute.load import recompute_from
+        for i in range(30):
+            add_activity(START + timedelta(days=i), tss=60)
+        end = START + timedelta(days=29)
+        recompute_load(db, athlete, START, end)
+        db.commit()
+        before = [m.ctl for m in all_metrics(db, athlete)]
+
+        add_activity(START + timedelta(days=10), tss=200)
+        days = recompute_from(db, athlete, START + timedelta(days=10), through=end)
+        db.commit()
+        after = [m.ctl for m in all_metrics(db, athlete)]
+
+        assert days == 20
+        assert before[:10] == after[:10], "days before the change must not move"
+        assert all(b < a for b, a in zip(before[10:], after[10:])), \
+            "every day from the change onward must rise"
+
+    def test_cascade_matches_a_full_recompute(self, db, athlete, add_activity):
+        """The cheap targeted recompute must produce identical numbers to redoing everything."""
+        from compute.load import recompute_from
+        for i in range(40):
+            add_activity(START + timedelta(days=i), tss=70)
+        end = START + timedelta(days=39)
+        recompute_load(db, athlete, START, end)
+        db.commit()
+
+        add_activity(START + timedelta(days=15), tss=180)
+        recompute_from(db, athlete, START + timedelta(days=15), through=end)
+        db.commit()
+        cascaded = [(m.date, m.ctl, m.atl) for m in all_metrics(db, athlete)]
+
+        for m in all_metrics(db, athlete):
+            db.delete(m)
+        db.commit()
+        recompute_load(db, athlete, START, end)
+        db.commit()
+        full = [(m.date, m.ctl, m.atl) for m in all_metrics(db, athlete)]
+
+        assert cascaded == full
+
+    def test_fixed_90_day_window_misses_older_uploads(self, db, athlete, add_activity):
+        """
+        The regression this replaced. An activity 120 days old falls outside a
+        90 day window, so the old code left its effect out of history entirely.
+        """
+        from compute.load import recompute_from
+        old_day = START
+        end = START + timedelta(days=150)
+        for i in range(0, 151, 5):
+            add_activity(START + timedelta(days=i), tss=60)
+        recompute_load(db, athlete, START, end)
+        db.commit()
+        baseline = metrics(db, athlete, end).ctl
+
+        add_activity(old_day, tss=300)
+
+        # A 90 day window starting from the end never reaches old_day.
+        recompute_from(db, athlete, end - timedelta(days=90), through=end)
+        db.commit()
+        windowed = metrics(db, athlete, end).ctl
+        assert windowed == pytest.approx(baseline), "the old approach cannot see the change"
+
+        recompute_from(db, athlete, old_day, through=end)
+        db.commit()
+        cascaded = metrics(db, athlete, end).ctl
+        assert cascaded > baseline, "cascading from the event date does see it"
+
+    def test_returns_zero_when_nothing_to_do(self, db, athlete):
+        from compute.load import recompute_from
+        assert recompute_from(db, athlete, START + timedelta(days=5), through=START) == 0
+
+
+class TestEarliestUncountedActivity:
+    def test_finds_the_oldest_day_with_no_metrics_row(self, db, athlete, add_activity):
+        from compute.load import earliest_uncounted_activity
+        for i in range(10):
+            add_activity(START + timedelta(days=i), tss=50)
+        recompute_load(db, athlete, START, START + timedelta(days=9))
+        db.commit()
+        assert earliest_uncounted_activity(db, athlete.id) is None
+
+        backdated = START - timedelta(days=45)
+        add_activity(backdated, tss=90)
+        assert earliest_uncounted_activity(db, athlete.id) == backdated
+
+    def test_returns_none_when_there_are_no_activities(self, db, athlete):
+        from compute.load import earliest_uncounted_activity
+        assert earliest_uncounted_activity(db, athlete.id) is None

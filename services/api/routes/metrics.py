@@ -1,8 +1,9 @@
 from datetime import date, timedelta
-from fastapi import APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException
 from pydantic import BaseModel
 
 from db.database import get_db
+from services.api.auth import current_athlete_id, load_athlete
 from db.models import Athlete, DailyMetrics
 
 router = APIRouter()
@@ -39,11 +40,9 @@ def _risk_level(tsb: float | None) -> str:
 
 
 @router.get("/", response_model=MetricsSummaryOut)
-def get_metrics(days: int = 90):
+def get_metrics(days: int = 90, athlete_id: int = Depends(current_athlete_id)):
     with get_db() as db:
-        athlete = db.query(Athlete).first()
-        if not athlete:
-            raise HTTPException(404, "No athlete found — run the sync first")
+        athlete = load_athlete(db, athlete_id)
 
         since = date.today() - timedelta(days=days)
         rows = (

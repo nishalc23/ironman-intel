@@ -1,8 +1,9 @@
 from datetime import date, timedelta
-from fastapi import APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException
 from pydantic import BaseModel
 
 from db.database import get_db
+from services.api.auth import current_athlete_id, load_athlete
 from db.models import Athlete
 from db.sleep_model import SleepLog
 
@@ -48,11 +49,9 @@ def _to_entry(log: SleepLog) -> SleepEntry:
 
 
 @router.get("/", response_model=SleepSummary)
-def get_sleep_summary():
+def get_sleep_summary(athlete_id: int = Depends(current_athlete_id)):
     with get_db() as db:
-        athlete = db.query(Athlete).first()
-        if not athlete:
-            raise HTTPException(404, "No athlete found")
+        athlete = load_athlete(db, athlete_id)
 
         since = date.today() - timedelta(days=7)
         logs = (
@@ -95,12 +94,10 @@ def get_sleep_summary():
 
 
 @router.get("/latest", response_model=SleepEntry)
-def get_latest_sleep():
+def get_latest_sleep(athlete_id: int = Depends(current_athlete_id)):
     """Returns most recent sleep log — used by adaptive planner for readiness check."""
     with get_db() as db:
-        athlete = db.query(Athlete).first()
-        if not athlete:
-            raise HTTPException(404, "No athlete found")
+        athlete = load_athlete(db, athlete_id)
 
         log = (
             db.query(SleepLog)
