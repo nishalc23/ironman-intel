@@ -14,9 +14,17 @@ from db.models import Base, Athlete, Activity, GymWorkout  # noqa: E402
 
 @pytest.fixture
 def db():
+    """
+    Mirrors the production session config, autoflush included.
+
+    Testing with autoflush on hid a real bug: the app disables it, so rows
+    added but not flushed were invisible to later queries in the same session,
+    and fifty ingested activities went unscored. A fixture that does not match
+    production cannot catch that.
+    """
     engine = create_engine("sqlite://")
     Base.metadata.create_all(engine)
-    session = sessionmaker(bind=engine)()
+    session = sessionmaker(bind=engine, autocommit=False, autoflush=False)()
     yield session
     session.close()
 

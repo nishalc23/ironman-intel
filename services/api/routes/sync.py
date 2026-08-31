@@ -2,11 +2,12 @@ import os
 import sys
 import logging
 from datetime import date, timedelta
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 sys.path.insert(0, "/app")
 
 from db.database import get_db
+from services.api.auth import current_athlete_id
 from db.models import Athlete, Activity
 from services.ingestion.garmin_client import GarminClient
 from services.ingestion.main import get_or_create_athlete, ingest_activities, ingest_sleep, _ingest_raw_activities
@@ -19,7 +20,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-def _run_sync():
+def _run_sync(athlete_id: int):
     import concurrent.futures
     email = os.environ["GARMIN_EMAIL"]
     password = os.environ["GARMIN_PASSWORD"]
@@ -33,10 +34,19 @@ def _run_sync():
         raw_activities = activities_future.result()
 
     with get_db() as db:
-        athlete = get_or_create_athlete(db, email)
+        # Sync into the athlete who asked for it. Keying off the Garmin email
+        # would create a second athlete row and quietly write this data to
+        # somebody else's account.
+        athlete = db.query(Athlete).filter(Athlete.id == athlete_id).one()
 
         # Ingest activities (uses already-fetched list)
         new_count, earliest_new = _ingest_raw_activities(athlete, db, raw_activities)
+
+        # The session runs with autoflush off, so the activities just added are
+        # invisible to the query below until we flush. Without this the TSS
+        # backfill found nothing, every activity committed with a NULL score,
+        # and CTL/ATL summed a column of zeros.
+        db.flush()
 
         # Stamp TSS on any activity missing it
         untssed = (
@@ -44,7 +54,7 @@ def _run_sync():
             .filter(Activity.athlete_id == athlete.id, Activity.tss.is_(None))
             .all()
         )
-        athlete_obj = db.query(Athlete).get(athlete.id)
+        athlete_obj = athlete
         for act in untssed:
             act.tss = estimate_activity_tss(
                 discipline=act.discipline,
@@ -54,6 +64,10 @@ def _run_sync():
                 ftp_watts=athlete_obj.ftp_watts,
                 threshold_hr=None,
             )
+
+        # Same reason: recompute_load reads Activity.tss straight from the
+        # database, so the scores above have to land before it runs.
+        db.flush()
 
         # Cascade from the oldest workout this sync touched, not a fixed window.
         # A backdated upload invalidates its own day and every day after it,
@@ -80,6 +94,7 @@ def _run_sync():
 
 
 @router.post("/")
-def trigger_sync(background_tasks: BackgroundTasks):
-    background_tasks.add_task(_run_sync)
+def trigger_sync(background_tasks: BackgroundTasks,
+                 athlete_id: int = Depends(current_athlete_id)):
+    background_tasks.add_task(_run_sync, athlete_id)
     return {"status": "sync started"}

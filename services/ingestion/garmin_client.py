@@ -6,7 +6,11 @@ from garminconnect import Garmin, GarminConnectAuthenticationError
 
 logger = logging.getLogger(__name__)
 
-TOKEN_DIR = Path("/app/.garmin_tokens")
+# /app only exists inside the container. Outside it that path is unwritable,
+# so authentication died before it started. Overridable, with a repo-local
+# default that works when running the API directly.
+TOKEN_DIR = Path(os.environ.get("GARMIN_TOKEN_DIR")
+                 or (Path(__file__).resolve().parents[2] / ".garmin_tokens"))
 
 DISCIPLINE_MAP = {
     # Swimming

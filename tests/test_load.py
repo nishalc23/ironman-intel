@@ -312,3 +312,70 @@ class TestEarliestUncountedActivity:
     def test_returns_none_when_there_are_no_activities(self, db, athlete):
         from compute.load import earliest_uncounted_activity
         assert earliest_uncounted_activity(db, athlete.id) is None
+
+
+class TestAutoflushRegression:
+    """
+    The session runs with autoflush disabled. That makes freshly added rows
+    invisible to later queries in the same session until something flushes,
+    which silently produced a flat fitness chart: fifty ingested activities
+    were never scored, committed with a NULL TSS, and the EMA summed zeros.
+    """
+
+    def test_added_activities_are_invisible_until_flush(self, db, athlete):
+        from datetime import datetime
+        from db.models import Activity
+
+        db.add(Activity(
+            athlete_id=athlete.id, garmin_activity_id="pending", discipline="running",
+            start_time=datetime.combine(START, datetime.min.time()),
+            duration_seconds=3600, avg_heart_rate=150, tss=None,
+        ))
+        # No flush yet, so a query cannot see it. This is the trap.
+        assert db.query(Activity).filter(Activity.tss.is_(None)).count() == 0
+
+        db.flush()
+        assert db.query(Activity).filter(Activity.tss.is_(None)).count() == 1
+
+    def test_unscored_activities_produce_no_training_load(self, db, athlete):
+        """A NULL TSS contributes nothing, which is why the bug was invisible."""
+        from datetime import datetime
+        from db.models import Activity
+
+        db.add(Activity(
+            athlete_id=athlete.id, garmin_activity_id="unscored", discipline="running",
+            start_time=datetime.combine(START, datetime.min.time()),
+            duration_seconds=3600, avg_heart_rate=155, tss=None,
+        ))
+        db.commit()
+
+        recompute_load(db, athlete, START, START)
+        db.commit()
+        assert metrics(db, athlete, START).ctl == 0.0
+
+    def test_scoring_before_recompute_produces_real_load(self, db, athlete):
+        """The fix: score the activities, flush, then recompute."""
+        from datetime import datetime
+        from db.models import Activity
+        from compute.tss import estimate_activity_tss
+
+        act = Activity(
+            athlete_id=athlete.id, garmin_activity_id="scored", discipline="running",
+            start_time=datetime.combine(START, datetime.min.time()),
+            duration_seconds=3600, avg_heart_rate=175, tss=None,
+        )
+        db.add(act)
+        db.flush()
+
+        for a in db.query(Activity).filter(Activity.tss.is_(None)).all():
+            a.tss = estimate_activity_tss(
+                discipline=a.discipline, duration_seconds=a.duration_seconds,
+                avg_hr=a.avg_heart_rate, avg_power=a.avg_power,
+                ftp_watts=athlete.ftp_watts, threshold_hr=None,
+            )
+        db.flush()
+
+        recompute_load(db, athlete, START, START)
+        db.commit()
+        assert metrics(db, athlete, START).ctl > 0
+        assert metrics(db, athlete, START).daily_tss == pytest.approx(100, abs=1)
