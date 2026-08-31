@@ -1,4 +1,4 @@
-.PHONY: up down api sync logs db-shell build frontend install test bench
+.PHONY: up down api sync logs db-shell build frontend install test bench dev
 
 up:
 	docker compose up -d postgres redis
@@ -43,3 +43,6 @@ test:  ## Run the test suite (no Docker needed — uses in-memory SQLite)
 
 bench:  ## Measure recompute_load query count and wall time
 	.venv/bin/python bench/backfill.py
+
+dev:  ## Run the whole app locally (API + frontend, SQLite, no Docker)
+	./scripts/dev.sh
