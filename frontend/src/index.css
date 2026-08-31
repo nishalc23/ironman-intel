@@ -15,9 +15,9 @@
 
 :root {
   /* Palette */
-  --bg:              #0F172A;
-  --bg-deep:         #080D1A;
-  --surface:         #1B2336;
+  --bg:              #05060A;
+  --bg-deep:         #000000;
+  --surface:         #0C0E14;
   --fg:              #F8FAFC;
   --fg-muted:        #94A3B8;
   --fg-dim:          #64748B;
@@ -35,10 +35,12 @@
 
   /* Glass */
   --blur:            16px;
-  --glass:           rgba(255, 255, 255, 0.06);
-  --glass-strong:    rgba(255, 255, 255, 0.10);
-  --glass-border:    rgba(255, 255, 255, 0.14);
-  --glass-highlight: rgba(255, 255, 255, 0.22);
+  /* Panels carry a touch more light than on the slate ground, because on black
+     there is less behind them to read as a surface. */
+  --glass:           rgba(255, 255, 255, 0.055);
+  --glass-strong:    rgba(255, 255, 255, 0.085);
+  --glass-border:    rgba(255, 255, 255, 0.13);
+  --glass-highlight: rgba(255, 255, 255, 0.20);
 }
 
 * { box-sizing: border-box; }
@@ -58,13 +60,18 @@ body {
    Three slow-drifting colour fields behind the whole app. This is what the
    glass panels blur; without it the backdrop-filter has nothing to do. */
 
+/*
+ * On black the aurora is dialled right down. It is no longer scenery; it is
+ * just enough colour for the glass to have something to refract, so panels
+ * still read as glass while the page itself stays black.
+ */
 .aurora {
   position: fixed;
-  inset: -20%;
+  inset: -25%;
   z-index: 0;
   pointer-events: none;
-  filter: blur(80px) saturate(140%);
-  opacity: 0.75;
+  filter: blur(110px) saturate(120%);
+  opacity: 0.22;
 }
 
 .aurora span {

@@ -157,10 +157,7 @@ export default function App() {
               style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.3), transparent)" }} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm font-bold text-paper tracking-tight">Ironman Intel</h1>
-              <span className="hidden sm:block text-[10px] border border-accent/40 text-accent px-1.5 py-0.5 rounded mono">v2</span>
-            </div>
+            <h1 className="text-sm font-bold text-paper tracking-tight">Ironman Intel</h1>
             <p className="text-[11px] text-paper-dim mono">
               {metrics?.athlete_name ?? "nishal"} · sub-5:00 target
             </p>
