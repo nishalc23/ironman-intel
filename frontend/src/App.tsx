@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
-import { api, ApiNotReadyError } from "./api/client";
+import { api, ApiNotReadyError, USING_SNAPSHOT } from "./api/client";
 import type { MetricsSummary, ActivityRecord, SleepSummary } from "./api/client";
 import WeeklyChart from "./components/WeeklyChart";
 import SleepCard from "./components/SleepCard";
 import FitnessChart from "./components/FitnessChart";
 import ActivityList from "./components/ActivityList";
 import { RACE_DATE } from "./data/plan";
-import { DEMO, SNAPSHOT_DATE } from "./demo";
+import { SNAPSHOT_DATE } from "./demo";
+import SignIn from "./components/SignIn";
 
 function daysUntilRace() {
   const now = new Date();
@@ -37,7 +38,9 @@ function HUDStat({ label, value, sub, color, unit }: {
   );
 }
 
-function SyncButton({ syncing, onClick }: { syncing: boolean; onClick: () => void }) {
+function SyncButton({ syncing, locked, onClick }: {
+  syncing: boolean; locked?: boolean; onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}
@@ -47,7 +50,12 @@ function SyncButton({ syncing, onClick }: { syncing: boolean; onClick: () => voi
         motion-safe:hover:-translate-y-0.5 cursor-pointer"
       style={{ background: "rgba(255,255,255,0.07)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18)" }}
     >
-      {syncing ? (
+      {locked ? (
+        <>
+          <span className="text-paper-dim text-base">🔒</span>
+          <span className="text-paper-muted hidden sm:inline">Sync · sign in</span>
+        </>
+      ) : syncing ? (
         <>
           <span className="w-3 h-3 border border-accent border-t-transparent rounded-full animate-spin" />
           <span className="text-paper-muted">Syncing…</span>
@@ -104,6 +112,7 @@ export default function App() {
   const [sleep, setSleep] = useState<SleepSummary | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [apiDown, setApiDown] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
 
   const loadAll = useCallback(async () => {
     try {
@@ -156,6 +165,22 @@ export default function App() {
     : today.tsb < -10 ? { label: "Accumulating", color: "#FBBF24" }
     : { label: "Training load", color: "#A78BFA" };
 
+  if (showSignIn) {
+    return (
+      <div className="relative min-h-screen">
+        <SignIn onSignedIn={() => window.location.reload()} />
+        <button
+          onClick={() => setShowSignIn(false)}
+          className="fixed top-4 left-4 z-50 px-3 py-2 rounded-xl text-xs text-paper-muted
+            border border-white/15 hover:border-white/30 cursor-pointer"
+          style={{ background: "rgba(255,255,255,0.05)" }}
+        >
+          ← Back to the demo
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen">
       {/* Ambient colour field. Glass has nothing to refract without it. */}
@@ -185,12 +210,16 @@ export default function App() {
         </div>
         <div className="flex items-center gap-3">
           <RaceCountdown days={dtr} />
-          {!DEMO && <SyncButton syncing={syncing} onClick={handleSync} />}
+          <SyncButton
+            syncing={syncing}
+            locked={USING_SNAPSHOT}
+            onClick={() => (USING_SNAPSHOT ? setShowSignIn(true) : handleSync())}
+          />
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        {DEMO && <DemoBanner />}
+        {USING_SNAPSHOT && <DemoBanner />}
         <WeeklyChart />
 
         {/* API down banner */}

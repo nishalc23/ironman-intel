@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import SignIn from "./components/SignIn";
 import { token } from "./api/client";
-import { DEMO } from "./demo";
+import { DEMO_BUILD } from "./demo";
 import "./index.css";
 
 function Root() {
@@ -11,7 +11,7 @@ function Root() {
   // anywhere clears it, which flips this back to the sign-in screen.
   // The demo build has no auth server to sign in against, so it opens straight
   // onto the dashboard and reads from the bundled snapshot.
-  const [signedIn, setSignedIn] = useState(() => DEMO || Boolean(token.get()));
+  const [signedIn, setSignedIn] = useState(() => DEMO_BUILD || Boolean(token.get()));
 
   if (!signedIn) return <SignIn onSignedIn={() => setSignedIn(true)} />;
   return <App />;

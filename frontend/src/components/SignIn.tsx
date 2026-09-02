@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { auth, token } from "../api/client";
+import { DEMO_BUILD } from "../demo";
 
 export default function SignIn({ onSignedIn }: { onSignedIn: (name: string | null) => void }) {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -58,7 +59,9 @@ export default function SignIn({ onSignedIn }: { onSignedIn: (name: string | nul
           
         >
           <div className="flex gap-1 p-1 rounded-xl mb-1" style={{ background: "rgba(0,0,0,0.3)" }}>
-            {(["login", "signup"] as const).map((m) => (
+            {/* The public build talks to an API whose registration is closed,
+                so offering a Create account tab there is a dead end. */}
+            {(DEMO_BUILD ? (["login"] as const) : (["login", "signup"] as const)).map((m) => (
               <button
                 key={m}
                 type="button"

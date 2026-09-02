@@ -19,7 +19,10 @@ import activitiesJson from "./snapshot/activities.json";
 import sleepJson from "./snapshot/sleep.json";
 import weekJson from "./snapshot/week.json";
 
-export const DEMO = import.meta.env.VITE_DEMO === "true";
+// True in the build published to GitHub Pages. It means "there is no backend
+// on this origin", not "never talk to an API" — signing in points the same
+// build at the live API instead of the snapshot.
+export const DEMO_BUILD = import.meta.env.VITE_DEMO === "true";
 
 const metrics = metricsJson as unknown as MetricsSummary;
 const activities = activitiesJson as unknown as ActivityRecord[];
@@ -34,13 +37,24 @@ export const SNAPSHOT_DATE = metrics.today?.date ?? metrics.history[metrics.hist
 let week: WeekPlan = structuredClone(weekJson) as unknown as WeekPlan;
 
 function recount(plan: WeekPlan): WeekPlan {
+  // Mirror the server's counting exactly. The rest day is part of `completed`
+  // but not of `training_completed`, and the ring renders the training pair —
+  // so folding rest into both makes a week with an unticked session read as
+  // finished.
   let completed = 0;
+  let trainingCompleted = 0;
+  const byDiscipline: Record<string, number> = {};
+
   for (const group of plan.groups) {
     group.done = group.requirements.filter((r) => r.completed).length;
+    byDiscipline[group.discipline] = group.done;
     completed += group.done;
+    if (group.discipline !== "rest") trainingCompleted += group.done;
   }
+
   plan.progress.completed = completed;
-  plan.progress.training_completed = completed;
+  plan.progress.training_completed = trainingCompleted;
+  plan.progress.by_discipline = byDiscipline;
   return plan;
 }
 

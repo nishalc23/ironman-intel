@@ -50,6 +50,16 @@ class TestSignupAndLogin:
         assert r.status_code == 200
         assert r.json()["email"] == "alice@example.com"
 
+    def test_signup_is_closed_unless_explicitly_opened(self, client, monkeypatch):
+        """The API is reachable from the public demo page, so a stranger who
+        finds the URL must not be able to register. The autouse fixture opens
+        signup for the rest of the suite; this is the shipped default."""
+        monkeypatch.delenv("ALLOW_SIGNUP", raising=False)
+        r = client.post("/api/auth/signup",
+                        json={"email": "stranger@example.com", "password": "hunter2hunter2"})
+        assert r.status_code == 403
+        assert "closed" in r.json()["detail"].lower()
+
     def test_duplicate_email_is_rejected(self, client):
         register(client, "dupe@example.com")
         r = client.post("/api/auth/signup", json={"email": "dupe@example.com",

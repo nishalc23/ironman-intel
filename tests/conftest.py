@@ -12,6 +12,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from db.models import Base, Athlete, Activity, GymWorkout  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def open_signup(monkeypatch):
+    """Registration ships closed, but the auth tests sign athletes up to arrange
+    their fixtures. Open it for the suite so those tests exercise the real
+    endpoint; the closed-by-default case has its own test."""
+    monkeypatch.setenv("ALLOW_SIGNUP", "true")
+
+
 @pytest.fixture
 def db():
     """

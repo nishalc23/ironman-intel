@@ -24,6 +24,11 @@ app.add_middleware(
         "http://localhost:5174",
         "https://nishals-macbook-pro.tail396e25.ts.net",
         "http://nishals-macbook-pro.tail396e25.ts.net",
+        # The public demo on GitHub Pages reads the snapshot until someone
+        # signs in; from then on it calls this API directly. Every route it
+        # reaches still requires a token, so the origin being public does not
+        # widen what an anonymous visitor can do.
+        "https://nishalc23.github.io",
     ],
     allow_credentials=True,
     allow_methods=["*"],

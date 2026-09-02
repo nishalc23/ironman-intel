@@ -1,4 +1,5 @@
 """Signup, login, and Garmin connection for the authenticated athlete."""
+import os
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -45,8 +46,25 @@ class MeOut(BaseModel):
     garmin_connected: bool
 
 
+def signup_is_open() -> bool:
+    """Whether registration accepts new athletes.
+
+    This is a single-athlete app whose API is reachable from a public demo
+    page, so registration is closed unless someone deliberately opens it. CORS
+    is no help here: it constrains browsers, not curl, so the check has to be
+    a check. Read per request rather than at import so the setting can change
+    without a restart, and so tests can flip it.
+    """
+    return os.getenv("ALLOW_SIGNUP", "").lower() == "true"
+
+
 @router.post("/signup", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
 def signup(body: SignupIn):
+    if not signup_is_open():
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "Registration is closed. Set ALLOW_SIGNUP=true to open it.",
+        )
     with get_db() as db:
         if db.query(Athlete).filter(Athlete.email == body.email).first():
             raise HTTPException(status.HTTP_409_CONFLICT, "That email is already registered")

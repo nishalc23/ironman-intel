@@ -16,8 +16,12 @@ ROOT="$PWD"
 
 REPO_NAME=$(basename -s .git "$(git config --get remote.origin.url)")
 
+# Where the published build sends requests once someone signs in. Anonymous
+# visitors never reach it — they read the bundled snapshot.
+API_BASE=${API_BASE:-https://ironman-intel.onrender.com/api}
+
 echo "Building demo bundle…"
-VITE_DEMO=true VITE_BASE="/$REPO_NAME/" npm --prefix frontend run build
+VITE_DEMO=true VITE_BASE="/$REPO_NAME/" VITE_API_BASE="$API_BASE" npm --prefix frontend run build
 
 # Pages would otherwise run the output through Jekyll, which drops any path
 # starting with an underscore.

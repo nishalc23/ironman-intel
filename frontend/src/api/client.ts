@@ -1,6 +1,8 @@
-import { DEMO, demoApi } from "../demo";
+import { DEMO_BUILD, demoApi } from "../demo";
 
-const BASE = "/api";
+// The demo build is served from GitHub Pages with no API alongside it, so it
+// needs an absolute URL. Everywhere else the dev server and nginx proxy /api.
+const BASE = import.meta.env.VITE_API_BASE ?? "/api";
 
 export interface DailyMetric {
   date: string;
@@ -221,6 +223,11 @@ const liveApi = {
     ),
 };
 
-// In demo mode every call resolves from the bundled snapshot instead of the
-// network. Swapping here means no component needs to know which mode it is in.
-export const api = DEMO ? (demoApi as unknown as typeof liveApi) : liveApi;
+// The demo build serves the snapshot to anonymous visitors and the live API to
+// anyone holding a token. Sync is the only control that needs the difference,
+// and the server rejects it without a token regardless of what the UI shows.
+//
+// Read once at load: signing in reloads the page, which re-evaluates this.
+export const USING_SNAPSHOT = DEMO_BUILD && !token.get();
+
+export const api = USING_SNAPSHOT ? (demoApi as unknown as typeof liveApi) : liveApi;
