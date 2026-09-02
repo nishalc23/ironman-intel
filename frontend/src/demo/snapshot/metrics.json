@@ -1,0 +1,926 @@
+{
+    "athlete_name": "Nishal",
+    "today": {
+        "date": "2026-08-31",
+        "ctl": 15.58,
+        "atl": 16.14,
+        "tsb": -0.56,
+        "daily_tss": 13.3,
+        "swim_km": 1.07,
+        "bike_km": 0.0,
+        "run_km": 0.0
+    },
+    "history": [
+        {
+            "date": "2026-06-02",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-03",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-04",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-05",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-06",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-07",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-08",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-09",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-10",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-11",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-12",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-13",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-14",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-15",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-16",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-17",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-18",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-19",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-20",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-21",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-22",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-23",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-24",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-25",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-26",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-27",
+            "ctl": 0.0,
+            "atl": 0.0,
+            "tsb": 0.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-28",
+            "ctl": 1.28,
+            "atl": 7.24,
+            "tsb": -5.96,
+            "daily_tss": 54.4,
+            "swim_km": 0.78,
+            "bike_km": 0.0,
+            "run_km": 4.84
+        },
+        {
+            "date": "2026-06-29",
+            "ctl": 1.63,
+            "atl": 8.41,
+            "tsb": -6.78,
+            "daily_tss": 16.0,
+            "swim_km": 0.0,
+            "bike_km": 0.48,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-06-30",
+            "ctl": 2.59,
+            "atl": 12.96,
+            "tsb": -10.37,
+            "daily_tss": 42.6,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 4.85
+        },
+        {
+            "date": "2026-07-01",
+            "ctl": 2.89,
+            "atl": 13.27,
+            "tsb": -10.38,
+            "daily_tss": 15.3,
+            "swim_km": 1.01,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-02",
+            "ctl": 2.92,
+            "atl": 12.08,
+            "tsb": -9.15,
+            "daily_tss": 4.3,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-03",
+            "ctl": 4.29,
+            "atl": 18.6,
+            "tsb": -14.31,
+            "daily_tss": 61.1,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 6.97
+        },
+        {
+            "date": "2026-07-04",
+            "ctl": 4.19,
+            "atl": 16.13,
+            "tsb": -11.94,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-05",
+            "ctl": 5.17,
+            "atl": 20.1,
+            "tsb": -14.93,
+            "daily_tss": 46.0,
+            "swim_km": 1.83,
+            "bike_km": 0.55,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-06",
+            "ctl": 6.88,
+            "atl": 27.78,
+            "tsb": -20.9,
+            "daily_tss": 77.8,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 11.27
+        },
+        {
+            "date": "2026-07-07",
+            "ctl": 7.01,
+            "atl": 25.74,
+            "tsb": -18.72,
+            "daily_tss": 12.4,
+            "swim_km": 0.0,
+            "bike_km": 0.25,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-08",
+            "ctl": 6.85,
+            "atl": 22.31,
+            "tsb": -15.46,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-09",
+            "ctl": 6.82,
+            "atl": 20.1,
+            "tsb": -13.28,
+            "daily_tss": 5.7,
+            "swim_km": 0.41,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-10",
+            "ctl": 6.71,
+            "atl": 17.72,
+            "tsb": -11.0,
+            "daily_tss": 2.2,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-11",
+            "ctl": 6.55,
+            "atl": 15.36,
+            "tsb": -8.8,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-12",
+            "ctl": 6.4,
+            "atl": 13.31,
+            "tsb": -6.91,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-13",
+            "ctl": 6.9,
+            "atl": 15.22,
+            "tsb": -8.32,
+            "daily_tss": 27.6,
+            "swim_km": 0.64,
+            "bike_km": 0.0,
+            "run_km": 3.23
+        },
+        {
+            "date": "2026-07-14",
+            "ctl": 7.35,
+            "atl": 16.64,
+            "tsb": -9.29,
+            "daily_tss": 25.9,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 4.0
+        },
+        {
+            "date": "2026-07-15",
+            "ctl": 7.17,
+            "atl": 14.42,
+            "tsb": -7.25,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-16",
+            "ctl": 7.0,
+            "atl": 12.5,
+            "tsb": -5.5,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-17",
+            "ctl": 6.84,
+            "atl": 10.84,
+            "tsb": -4.0,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-18",
+            "ctl": 6.68,
+            "atl": 9.4,
+            "tsb": -2.72,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-19",
+            "ctl": 6.52,
+            "atl": 8.14,
+            "tsb": -1.62,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-20",
+            "ctl": 9.27,
+            "atl": 23.49,
+            "tsb": -14.22,
+            "daily_tss": 123.4,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 16.1
+        },
+        {
+            "date": "2026-07-21",
+            "ctl": 9.06,
+            "atl": 20.43,
+            "tsb": -11.36,
+            "daily_tss": 0.5,
+            "swim_km": 0.05,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-22",
+            "ctl": 9.07,
+            "atl": 18.95,
+            "tsb": -9.88,
+            "daily_tss": 9.3,
+            "swim_km": 0.91,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-23",
+            "ctl": 8.86,
+            "atl": 16.42,
+            "tsb": -7.57,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-24",
+            "ctl": 8.65,
+            "atl": 14.24,
+            "tsb": -5.59,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-25",
+            "ctl": 8.74,
+            "atl": 14.02,
+            "tsb": -5.28,
+            "daily_tss": 12.6,
+            "swim_km": 0.74,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-26",
+            "ctl": 9.3,
+            "atl": 16.49,
+            "tsb": -7.19,
+            "daily_tss": 32.6,
+            "swim_km": 1.05,
+            "bike_km": 0.0,
+            "run_km": 3.5
+        },
+        {
+            "date": "2026-07-27",
+            "ctl": 9.08,
+            "atl": 14.3,
+            "tsb": -5.21,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-28",
+            "ctl": 8.87,
+            "atl": 12.39,
+            "tsb": -3.52,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-29",
+            "ctl": 9.23,
+            "atl": 13.95,
+            "tsb": -4.72,
+            "daily_tss": 24.1,
+            "swim_km": 0.0,
+            "bike_km": 6.5,
+            "run_km": 3.01
+        },
+        {
+            "date": "2026-07-30",
+            "ctl": 9.96,
+            "atl": 17.45,
+            "tsb": -7.49,
+            "daily_tss": 40.2,
+            "swim_km": 0.96,
+            "bike_km": 22.99,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-07-31",
+            "ctl": 9.72,
+            "atl": 15.12,
+            "tsb": -5.4,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-01",
+            "ctl": 10.23,
+            "atl": 17.29,
+            "tsb": -7.06,
+            "daily_tss": 31.4,
+            "swim_km": 2.03,
+            "bike_km": 0.0,
+            "run_km": 2.47
+        },
+        {
+            "date": "2026-08-02",
+            "ctl": 10.26,
+            "atl": 16.49,
+            "tsb": -6.24,
+            "daily_tss": 11.3,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-03",
+            "ctl": 11.25,
+            "atl": 21.3,
+            "tsb": -10.05,
+            "daily_tss": 52.6,
+            "swim_km": 1.19,
+            "bike_km": 0.0,
+            "run_km": 5.96
+        },
+        {
+            "date": "2026-08-04",
+            "ctl": 12.12,
+            "atl": 24.85,
+            "tsb": -12.74,
+            "daily_tss": 48.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 4.96
+        },
+        {
+            "date": "2026-08-05",
+            "ctl": 11.83,
+            "atl": 21.55,
+            "tsb": -9.71,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-06",
+            "ctl": 11.76,
+            "atl": 19.81,
+            "tsb": -8.05,
+            "daily_tss": 8.5,
+            "swim_km": 1.1,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-07",
+            "ctl": 11.48,
+            "atl": 17.17,
+            "tsb": -5.69,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-08",
+            "ctl": 11.21,
+            "atl": 14.89,
+            "tsb": -3.68,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-09",
+            "ctl": 10.95,
+            "atl": 12.9,
+            "tsb": -1.96,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-10",
+            "ctl": 11.07,
+            "atl": 13.33,
+            "tsb": -2.26,
+            "daily_tss": 16.1,
+            "swim_km": 1.1,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-11",
+            "ctl": 11.79,
+            "atl": 17.15,
+            "tsb": -5.35,
+            "daily_tss": 42.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 2.74
+        },
+        {
+            "date": "2026-08-12",
+            "ctl": 11.73,
+            "atl": 16.08,
+            "tsb": -4.34,
+            "daily_tss": 9.1,
+            "swim_km": 0.8,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-13",
+            "ctl": 11.45,
+            "atl": 13.94,
+            "tsb": -2.48,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-14",
+            "ctl": 11.19,
+            "atl": 12.08,
+            "tsb": -0.89,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-15",
+            "ctl": 15.86,
+            "atl": 38.4,
+            "tsb": -22.54,
+            "daily_tss": 209.8,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 19.93
+        },
+        {
+            "date": "2026-08-16",
+            "ctl": 15.49,
+            "atl": 33.29,
+            "tsb": -17.8,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-17",
+            "ctl": 15.12,
+            "atl": 28.86,
+            "tsb": -13.74,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-18",
+            "ctl": 14.77,
+            "atl": 25.02,
+            "tsb": -10.25,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-19",
+            "ctl": 14.48,
+            "atl": 22.06,
+            "tsb": -7.57,
+            "daily_tss": 2.8,
+            "swim_km": 0.27,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-20",
+            "ctl": 14.14,
+            "atl": 19.12,
+            "tsb": -4.98,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-21",
+            "ctl": 14.53,
+            "atl": 20.68,
+            "tsb": -6.14,
+            "daily_tss": 30.8,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 4.96
+        },
+        {
+            "date": "2026-08-22",
+            "ctl": 14.96,
+            "atl": 22.28,
+            "tsb": -7.32,
+            "daily_tss": 32.7,
+            "swim_km": 0.16,
+            "bike_km": 0.0,
+            "run_km": 3.22
+        },
+        {
+            "date": "2026-08-23",
+            "ctl": 15.33,
+            "atl": 23.41,
+            "tsb": -8.08,
+            "daily_tss": 30.8,
+            "swim_km": 1.78,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-24",
+            "ctl": 16.22,
+            "atl": 27.36,
+            "tsb": -11.14,
+            "daily_tss": 53.1,
+            "swim_km": 1.65,
+            "bike_km": 0.0,
+            "run_km": 4.4
+        },
+        {
+            "date": "2026-08-25",
+            "ctl": 17.43,
+            "atl": 32.72,
+            "tsb": -15.29,
+            "daily_tss": 67.6,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 6.07
+        },
+        {
+            "date": "2026-08-26",
+            "ctl": 17.2,
+            "atl": 29.36,
+            "tsb": -12.16,
+            "daily_tss": 7.5,
+            "swim_km": 0.91,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-27",
+            "ctl": 16.79,
+            "atl": 25.45,
+            "tsb": -8.66,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-28",
+            "ctl": 16.4,
+            "atl": 22.07,
+            "tsb": -5.67,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-29",
+            "ctl": 16.01,
+            "atl": 19.13,
+            "tsb": -3.12,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-30",
+            "ctl": 15.64,
+            "atl": 16.58,
+            "tsb": -0.95,
+            "daily_tss": 0.0,
+            "swim_km": 0.0,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        },
+        {
+            "date": "2026-08-31",
+            "ctl": 15.58,
+            "atl": 16.14,
+            "tsb": -0.56,
+            "daily_tss": 13.3,
+            "swim_km": 1.07,
+            "bike_km": 0.0,
+            "run_km": 0.0
+        }
+    ],
+    "overtraining_risk": "low"
+}

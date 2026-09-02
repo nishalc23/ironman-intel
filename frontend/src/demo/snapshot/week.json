@@ -1,0 +1,157 @@
+{
+    "week_start": "2026-08-31",
+    "week_end": "2026-09-06",
+    "groups": [
+        {
+            "discipline": "swim",
+            "done": 1,
+            "target": 2,
+            "requirements": [
+                {
+                    "key": "swim_endurance",
+                    "discipline": "swim",
+                    "intensity": "endurance",
+                    "label": "Endurance",
+                    "completed": true,
+                    "completed_at": "2026-09-01T01:06:33.127848"
+                },
+                {
+                    "key": "swim_intervals",
+                    "discipline": "swim",
+                    "intensity": "intervals",
+                    "label": "Intervals",
+                    "completed": false,
+                    "completed_at": null
+                }
+            ]
+        },
+        {
+            "discipline": "bike",
+            "done": 0,
+            "target": 4,
+            "requirements": [
+                {
+                    "key": "bike_easy_1",
+                    "discipline": "bike",
+                    "intensity": "easy",
+                    "label": "Easy",
+                    "completed": false,
+                    "completed_at": null
+                },
+                {
+                    "key": "bike_easy_2",
+                    "discipline": "bike",
+                    "intensity": "easy",
+                    "label": "Easy",
+                    "completed": false,
+                    "completed_at": null
+                },
+                {
+                    "key": "bike_threshold",
+                    "discipline": "bike",
+                    "intensity": "threshold",
+                    "label": "Threshold",
+                    "completed": false,
+                    "completed_at": null
+                },
+                {
+                    "key": "bike_intervals",
+                    "discipline": "bike",
+                    "intensity": "intervals",
+                    "label": "Intervals",
+                    "completed": false,
+                    "completed_at": null
+                }
+            ]
+        },
+        {
+            "discipline": "run",
+            "done": 1,
+            "target": 4,
+            "requirements": [
+                {
+                    "key": "run_easy_1",
+                    "discipline": "run",
+                    "intensity": "easy",
+                    "label": "Easy",
+                    "completed": true,
+                    "completed_at": "2026-09-01T02:15:08.043291"
+                },
+                {
+                    "key": "run_easy_2",
+                    "discipline": "run",
+                    "intensity": "easy",
+                    "label": "Easy",
+                    "completed": false,
+                    "completed_at": null
+                },
+                {
+                    "key": "run_threshold",
+                    "discipline": "run",
+                    "intensity": "threshold",
+                    "label": "Threshold",
+                    "completed": false,
+                    "completed_at": null
+                },
+                {
+                    "key": "run_intervals",
+                    "discipline": "run",
+                    "intensity": "intervals",
+                    "label": "Intervals",
+                    "completed": false,
+                    "completed_at": null
+                }
+            ]
+        },
+        {
+            "discipline": "brick",
+            "done": 0,
+            "target": 1,
+            "requirements": [
+                {
+                    "key": "brick",
+                    "discipline": "brick",
+                    "intensity": "brick",
+                    "label": "Bike into run",
+                    "completed": false,
+                    "completed_at": null
+                }
+            ]
+        },
+        {
+            "discipline": "rest",
+            "done": 0,
+            "target": 1,
+            "requirements": [
+                {
+                    "key": "rest",
+                    "discipline": "rest",
+                    "intensity": "rest",
+                    "label": "Full day off",
+                    "completed": false,
+                    "completed_at": null
+                }
+            ]
+        }
+    ],
+    "progress": {
+        "completed": 2,
+        "total": 12,
+        "training_completed": 2,
+        "training_total": 11,
+        "by_discipline": {
+            "swim": 1,
+            "bike": 0,
+            "run": 1,
+            "brick": 0,
+            "rest": 0
+        },
+        "targets": {
+            "swim": 2,
+            "bike": 4,
+            "run": 4,
+            "brick": 1,
+            "rest": 1
+        }
+    }
+}

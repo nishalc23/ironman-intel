@@ -6,6 +6,7 @@ import SleepCard from "./components/SleepCard";
 import FitnessChart from "./components/FitnessChart";
 import ActivityList from "./components/ActivityList";
 import { RACE_DATE } from "./data/plan";
+import { DEMO, SNAPSHOT_DATE } from "./demo";
 
 function daysUntilRace() {
   const now = new Date();
@@ -74,6 +75,25 @@ function RaceCountdown({ days }: { days: number }) {
         <span className="text-[10px] font-semibold text-paper-muted">IRONMAN 70.3</span>
         <span className="text-[10px] text-paper-dim">La Quinta · Dec 6, 2026</span>
       </div>
+    </div>
+  );
+}
+
+
+function DemoBanner() {
+  const when = SNAPSHOT_DATE
+    ? new Date(`${SNAPSHOT_DATE}T00:00:00`).toLocaleDateString(undefined, {
+        month: "long", day: "numeric", year: "numeric",
+      })
+    : null;
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-sky-500/20 text-sky-300 text-xs"
+      style={{ background: "rgba(56,189,248,0.05)" }}>
+      <span className="text-base">◈</span>
+      <span>
+        Live demo — real Garmin training data, frozen{when ? ` on ${when}` : ""}. The weekly
+        checklist is interactive; changes reset on reload.
+      </span>
     </div>
   );
 }
@@ -165,11 +185,12 @@ export default function App() {
         </div>
         <div className="flex items-center gap-3">
           <RaceCountdown days={dtr} />
-          <SyncButton syncing={syncing} onClick={handleSync} />
+          {!DEMO && <SyncButton syncing={syncing} onClick={handleSync} />}
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        {DEMO && <DemoBanner />}
         <WeeklyChart />
 
         {/* API down banner */}

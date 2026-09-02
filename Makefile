@@ -1,4 +1,4 @@
-.PHONY: up down api sync logs db-shell build frontend install test bench dev
+.PHONY: up down api sync logs db-shell build frontend install test bench dev snapshot
 
 up:
 	docker compose up -d postgres redis
@@ -46,3 +46,6 @@ bench:  ## Measure recompute_load query count and wall time
 
 dev:  ## Run the whole app locally (API + frontend, SQLite, no Docker)
 	./scripts/dev.sh
+
+snapshot:  ## Refresh the data behind the public demo, then commit and push
+	./scripts/snapshot.sh

@@ -1,3 +1,5 @@
+import { DEMO, demoApi } from "../demo";
+
 const BASE = "/api";
 
 export interface DailyMetric {
@@ -194,7 +196,7 @@ export const auth = {
   me: () => get<{ id: number; email: string; display_name: string | null; garmin_connected: boolean }>("/auth/me"),
 };
 
-export const api = {
+const liveApi = {
   getWeek: (weekOf?: string) =>
     get<WeekPlan>(`/week/${weekOf ? `?week_of=${weekOf}` : ""}`),
   completeSession: (key: string, weekOf?: string) =>
@@ -218,3 +220,7 @@ export const api = {
       {}
     ),
 };
+
+// In demo mode every call resolves from the bundled snapshot instead of the
+// network. Swapping here means no component needs to know which mode it is in.
+export const api = DEMO ? (demoApi as unknown as typeof liveApi) : liveApi;
