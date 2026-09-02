@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { auth, token } from "../api/client";
+import { auth, token, UnauthorizedError } from "../api/client";
 import { DEMO_BUILD } from "../demo";
 
 export default function SignIn({ onSignedIn }: { onSignedIn: (name: string | null) => void }) {
@@ -21,15 +21,22 @@ export default function SignIn({ onSignedIn }: { onSignedIn: (name: string | nul
       token.set(result.access_token);
       onSignedIn(result.display_name);
     } catch (err) {
-      // Login stays deliberately vague: the API returns the same response for
-      // a wrong password and an unknown email, and the UI must not undo that.
-      // Signup can be specific, because telling someone their password is too
-      // short leaks nothing.
-      setError(mode === "login"
-        ? "Incorrect email or password."
-        : err instanceof Error && err.message
-        ? err.message
-        : "Could not create that account.");
+      // A rejected credential stays deliberately vague: the API answers the
+      // same way for a wrong password and an unknown email, and the UI must
+      // not undo that. Anything else is the server failing, and saying
+      // "incorrect password" there sends people hunting for the wrong bug.
+      const rejected = err instanceof UnauthorizedError;
+      setError(
+        mode === "login"
+          ? rejected
+            ? "Incorrect email or password."
+            : "Could not reach the server. It may be down — try again later."
+          : rejected
+          ? "Incorrect email or password."
+          : err instanceof Error && err.message
+          ? err.message
+          : "Could not create that account."
+      );
     } finally {
       setBusy(false);
     }
