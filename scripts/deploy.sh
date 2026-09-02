@@ -36,7 +36,7 @@ else
 fi
 
 # The branch holds only the build, so clear it before copying the new one.
-git -C "$WORKTREE" rm -rq --ignore-unmatch .
+git -C "$WORKTREE" rm -rqf --ignore-unmatch .
 cp -R "$ROOT/frontend/dist/." "$WORKTREE/"
 
 git -C "$WORKTREE" add -A
